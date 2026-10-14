@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>נשימה</title>
+  <meta name="description" content="ערב טנטרי לזוג. פרטי, במכשיר בלבד.">
+  <meta name="theme-color" content="#0d0b1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="נשימה">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="sprite"></div>
+
+<!-- נעילה -->
+<section class="screen" id="scr-lock" hidden>
+  <div class="lock-wrap">
+    <div class="lock-emblem"><svg class="il"><use href="#il-lock"/></svg></div>
+    <h1 class="lock-title">נשימה</h1>
+    <p class="muted" id="lock-msg">הזינו קוד</p>
+    <div class="pin-dots" id="pin-dots"><i></i><i></i><i></i><i></i></div>
+    <div class="pinpad" id="pinpad"></div>
+    <button class="link danger" id="lock-forgot">שכחתי את הקוד (מחיקת כל הנתונים)</button>
+  </div>
+</section>
+
+<!-- הגדרה ראשונית -->
+<section class="screen" id="scr-setup" hidden>
+  <div class="setup-steps" id="setup-steps"></div>
+  <div class="setup-body" id="setup-body"></div>
+</section>
+
+<!-- בית / ערב -->
+<section class="screen" id="scr-home" hidden>
+  <header class="top">
+    <h1 class="brand">נשימה</h1>
+    <p class="muted" id="home-sub"></p>
+  </header>
+  <div class="home-emblem"><svg class="il"><use href="#il-lotus"/></svg></div>
+  <div class="home-roles" id="home-roles"></div>
+  <div id="home-mode"></div>
+  <div class="stack">
+    <button class="btn primary big" id="btn-resume" hidden>המשך ערב</button>
+    <button class="btn primary big" id="btn-new">התחל ערב חדש</button>
+    <button class="btn ghost" id="btn-swap">החלפת תפקידים</button>
+  </div>
+  <div class="home-allowed" id="home-allowed"></div>
+</section>
+
+<!-- משחק (ערב / קלף בודד) -->
+<section class="screen play" id="scr-play" hidden>
+  <header class="play-top">
+    <button class="btn back" id="play-back">‹ חזרה</button>
+    <span class="progress" id="play-progress"></span>
+    <button class="btn stop" id="play-stop">עצור</button>
+  </header>
+  <div class="play-lead" id="play-lead"></div>
+  <div class="card-host" id="card-host"></div>
+  <div class="play-actions" id="play-actions"></div>
+</section>
+
+<!-- קוביות -->
+<section class="screen" id="scr-dice" hidden>
+  <header class="top row">
+    <h1>קוביות</h1>
+    <button class="btn stop small" data-stop>עצור</button>
+  </header>
+  <p class="muted">פעולה × איבר × משך. מגלגלים, ומבצעים לאט בדיוק מה שיצא. מי שמבצע: הנותן/ת על המקבל/ת.</p>
+  <div class="dice-row" id="dice-row"></div>
+  <p class="dice-sentence" id="dice-sentence"></p>
+  <div class="stack">
+    <button class="btn primary big" id="dice-roll">גלגלו</button>
+    <button class="btn ghost" id="dice-timer" hidden>הפעלת טיימר</button>
+  </div>
+</section>
+
+<!-- טיימר -->
+<section class="screen" id="scr-timer" hidden>
+  <header class="top row">
+    <h1>טיימר</h1>
+    <button class="btn stop small" data-stop>עצור</button>
+  </header>
+  <div class="seg" id="timer-mode"><button type="button" data-v="breath" class="on">נשימה משותפת</button><button type="button" data-v="count">ספירה לאחור</button></div>
+  <div id="timer-breath">
+    <div class="breath-wrap">
+      <div class="breath-orb" id="breath-orb"><span id="breath-label">מוכנים</span><span id="breath-count"></span></div>
+      <div id="breath-cycles"></div>
+    </div>
+    <div class="presets" id="breath-patterns"></div>
+    <div class="row center gap"><button class="btn primary" id="breath-start">התחלה</button></div>
+    <p class="muted tiny center">הכדור מתרחב בשאיפה ומתכווץ בנשיפה. פעמון עדין בכל מעבר. נשמו יחד מול המסך או מול הטלוויזיה.</p>
+  </div>
+  <div id="timer-countdown" hidden>
+    <div class="timer-ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><circle id="timer-arc" cx="50" cy="50" r="46"/></svg><div class="timer-face" id="timer-face">00:00</div></div>
+    <div class="presets" id="timer-presets"></div>
+    <div class="row center gap">
+      <button class="btn primary" id="timer-start">התחל</button>
+      <button class="btn ghost" id="timer-reset">אפס</button>
+    </div>
+  </div>
+</section>
+
+<!-- עוד -->
+<section class="screen" id="scr-more" hidden>
+  <header class="top"><h1>עוד</h1></header>
+  <div class="menu">
+    <button class="menu-item" data-go="random"><svg class="il"><use href="#il-dice"/></svg><span>קלף אקראי</span></button>
+    <button class="menu-item" data-go="editor"><svg class="il"><use href="#il-marker"/></svg><span>כל המשימות לפי קטגוריות: תמונות, סרטונים, הוספה</span></button>
+    <button class="menu-item" data-go="list"><svg class="il"><use href="#il-speech"/></svg><span>כל המשימות להעתקה: הגבר נותן / האשה נותנת</span></button>
+    <button class="menu-item" data-go="limits"><svg class="il"><use href="#il-hands"/></svg><span>גבולות ועוצמה</span></button>
+    <button class="menu-item" data-go="partners"><svg class="il"><use href="#il-heart"/></svg><span>שמות, מי נותן ומילת עצירה</span></button>
+    <button class="menu-item" data-go="tv"><svg class="il"><use href="#il-camera"/></svg><span>קאסט לטלוויזיה (מצב 16:9)</span></button>
+    <button class="menu-item" data-go="ai"><svg class="il"><use href="#il-marker"/></svg><span>איורים ב-AI (Claude)</span></button>
+    <button class="menu-item" data-go="tts"><svg class="il"><use href="#il-music"/></svg><span id="tts-label">הקראת כרטיסים</span></button>
+    <button class="menu-item" id="btn-media-usage"><svg class="il"><use href="#il-camera"/></svg><span id="media-usage">תמונות וסרטונים שלכם</span></button>
+    <button class="menu-item" data-go="pin"><svg class="il"><use href="#il-lock"/></svg><span id="pin-label">קוד נעילה</span></button>
+    <label class="menu-item toggle"><svg class="il"><use href="#il-sun"/></svg><span>מסך דולק בזמן משחק</span><input type="checkbox" id="opt-awake"></label>
+    <label class="menu-item toggle"><svg class="il"><use href="#il-gear"/></svg><span>לכלול קטגוריות שסומנו ״אולי״</span><input type="checkbox" id="opt-maybe"></label>
+    <label class="menu-item toggle"><svg class="il"><use href="#il-stop"/></svg><span>הערות בטיחות על הכרטיסים</span><input type="checkbox" id="opt-safety"></label>
+    <button class="menu-item" data-go="safety"><svg class="il"><use href="#il-stop"/></svg><span>עקרונות: עצור, לאט, אין יעד</span></button>
+    <button class="menu-item" id="btn-refresh"><svg class="il"><use href="#il-gear"/></svg><span>רענון לגרסה החדשה (בלי למחוק כלום)</span></button>
+    <button class="menu-item danger" id="btn-wipe"><svg class="il"><use href="#il-flame"/></svg><span>מחיקת כל הנתונים</span></button>
+  </div>
+  <p class="muted tiny">הכול נשמר במכשיר הזה בלבד. שום דבר לא נשלח לשום מקום.</p>
+  <p class="muted tiny center" id="app-version"></p>
+</section>
+
+<!-- עורך חפיסה -->
+<section class="screen" id="scr-editor" hidden>
+  <header class="top row">
+    <button class="btn back" data-go="more">‹ עוד</button>
+    <h1>המשימות</h1>
+    <button class="btn primary small" id="editor-add">+ חדש</button>
+  </header>
+  <div class="filters" id="editor-filters"></div>
+  <div class="editor-list" id="editor-list"></div>
+</section>
+
+<!-- טופס כרטיס -->
+<section class="screen" id="scr-cardform" hidden>
+  <header class="top row">
+    <button class="btn back" data-go="editor">‹ ביטול</button>
+    <h1 id="cardform-title">כרטיס חדש</h1>
+    <button class="btn primary small" id="cardform-save">שמירה</button>
+  </header>
+  <form class="form" id="cardform" onsubmit="return false">
+    <label>קטגוריה<select id="cf-cat"></select></label>
+    <label>עוצמה
+      <div class="seg" id="cf-lvl"><button type="button" data-v="1">1 חימום</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3 אינטנסיבי</button></div>
+    </label>
+    <label>מופנה אל
+      <div class="seg" id="cf-to"><button type="button" data-v="D">המוביל/ה</button><button type="button" data-v="S">המובל/ת</button><button type="button" data-v="B">שניכם</button></div>
+    </label>
+    <label>משך בדקות (לא חובה)<input type="number" id="cf-min" min="0" max="120" inputmode="numeric"></label>
+    <label>איור<div class="imgpick" id="cf-img"></div></label>
+    <button type="button" class="btn ghost" id="cf-ai">✨ איור ב-AI</button>
+    <p class="muted tiny">תמונה וסרטון לכרטיס מצרפים אחרי השמירה, מרשימת המשימות.</p>
+    <label>הטקסט
+      <textarea id="cf-text" rows="6" placeholder="{d:קשור|קשרי} את {S} ו..."></textarea>
+    </label>
+    <details class="help"><summary>איך כותבים כרטיס שמתאים לשניכם</summary>
+      <p><code>{D}</code> = שם המוביל/ה, <code>{S}</code> = שם המובל/ת.<br>
+      <code>{d:זכר|נקבה}</code> בוחר לפי מין המוביל/ה, <code>{s:זכר|נקבה}</code> לפי מין המובל/ת.<br>
+      דוגמה: <code>{d:תן|תני} ל{S} פקודה. {s:הוא מבצע|היא מבצעת} מיד.</code></p>
+    </details>
+    <div class="preview-label">תצוגה מקדימה</div>
+    <div id="cf-preview"></div>
+  </form>
+</section>
+
+<!-- גבולות -->
+<section class="screen" id="scr-limits" hidden>
+  <header class="top row">
+    <button class="btn back" data-go="more">‹ עוד</button>
+    <h1>גבולות ועוצמה</h1>
+  </header>
+  <div id="limits-body"></div>
+</section>
+
+<!-- בטיחות -->
+<section class="screen" id="scr-safety" hidden>
+  <header class="top row">
+    <button class="btn back" data-go="more">‹ עוד</button>
+    <h1>עקרונות</h1>
+  </header>
+  <div class="prose">
+    <h2>שלושה עקרונות</h2>
+    <ul>
+      <li><b>״עצור״ עוצר הכול, מיד, בלי דיון.</b> ״לאט״ מאט ונשאר. שתי המילים האלה הן חלק מהטקס, לא הפרעה לו.</li>
+      <li><b>אין יעד.</b> אורגזמה יכולה לקרות ויכולה לא לקרות. המשימה היא הנוכחות, הנשימה והמגע, לא הסוף.</li>
+      <li><b>מה שלא סוכם לא קורה הערב.</b> רעיון חדש באמצע? שומרים לפעם הבאה ומדברים עליו בבוקר.</li>
+    </ul>
+    <h2>גוף</h2>
+    <p>שמן על בסיס מים או שמן קוקוס. ידיים נקיות, ציפורניים קצרות. מקלחת לפני. לא מפי הטבעת לקדמה בלי שטיפה. בפנים רק עם שמן, לאט, ואחרי ״כן״ בקול.</p>
+    <h2>נשימה</h2>
+    <p>נשימת אש ונשימות מהירות עלולות לסחרר. יושבים או שוכבים, לא עומדים. סחרחורת או עקצוצים חזקים: חוזרים לנשימה רגילה ומחכים. לא למי שבהריון, עם לחץ דם גבוה או בעיות לב.</p>
+    <h2>אחרי</h2>
+    <p>תמיד סגירה: מים, שמיכה, מגע שקט, מילה של תודה. ערב כזה פותח הרבה, וגל של רגש יום-יומיים אחרי הוא נורמלי. מדברים עליו.</p>
+  </div>
+</section>
+
+<!-- הקראה -->
+<section class="screen" id="scr-tts" hidden>
+  <header class="top row">
+    <button class="btn back" data-go="more">‹ עוד</button>
+    <h1>הקראה</h1>
+  </header>
+  <div id="tts-body"></div>
+</section>
+
+<!-- רשימה להעתקה -->
+<section class="screen" id="scr-list" hidden>
+  <header class="top row">
+    <button class="btn back" data-go="more">‹ עוד</button>
+    <h1>להעתקה</h1>
+    <button class="btn primary small" id="list-copy-all">העתקת הכול</button>
+  </header>
+  <p class="muted tiny">כל משימה פעמיים: פעם ״הגבר נותן״ ופעם ״האשה נותנת״, בלי שמות. ״העתקה״ מעתיקה את הנוסח. ״פרומפט תמונה/סרטון״ מעתיקים פרומפט מוכן למחולל: בסיס הסגנון שלמטה + מי נותן + טקסט המשימה כסצנה. <span id="list-count"></span></p>
+  <details class="help">
+    <summary>בסיס הפרומפט (אפשר לערוך, נשמר במכשיר)</summary>
+    <p class="muted tiny">מעלים למחולל תמונת ייחוס של שתי הדמויות (או שתי תמונות). הפרומפט מתייחס אל ״הגבר״ ו״האשה״ מתמונת הייחוס, ולא נוגע בלבוש בכלל. מה שתכתבו כאן יקבע את הסגנון ואת רמת המפורשות; טקסט המשימה בעברית מצורף אחרי זה כסצנה.</p>
+    <label>תמונה<textarea id="prompt-style" rows="5" dir="ltr"></textarea></label>
+    <label>תוספת לסרטון<textarea id="prompt-video" rows="2" dir="ltr"></textarea></label>
+    <button class="btn ghost small" id="prompt-reset">חזרה לברירת המחדל</button>
+  </details>
+  <div class="row gap" style="margin-bottom:10px">
+    <button class="btn primary" id="list-copy-videos">העתקת כל פרומפטי הסרטון</button>
+    <button class="btn ghost" id="list-download">הורדה כקובץ טקסט</button>
+  </div>
+  <div id="list-body"></div>
+</section>
+
+<!-- טלוויזיה: במה 16:9 -->
+<section class="screen tv" id="scr-tv" hidden>
+  <div class="tv-stage" id="tv-stage"></div>
+</section>
+
+<!-- איורים ב-AI -->
+<section class="screen" id="scr-ai" hidden>
+  <header class="top row">
+    <button class="btn back" data-go="more">‹ עוד</button>
+    <h1>איורים ב-AI</h1>
+  </header>
+  <div id="ai-body"></div>
+</section>
+
+<!-- תמונה במסך מלא -->
+<div class="overlay lightbox" id="lightbox" hidden><img alt=""></div>
+
+<!-- גרסה חדשה -->
+<div class="update-bar" id="update-bar" hidden><span>גרסה חדשה ירדה</span><button class="btn primary small">רענון</button></div>
+
+<!-- עצור (שכבה) -->
+<div class="overlay" id="stop-overlay" hidden>
+  <div class="overlay-card">
+    <div class="overlay-emblem"><svg class="il"><use href="#il-stop"/></svg></div>
+    <div class="safeword-label">מילת העצירה</div>
+    <div class="safeword" id="stop-safeword"></div>
+    <p>הכול עוצר עכשיו. מורידים כל קשירה, קולר ואביזר. מים. נשימה.</p>
+    <div class="stack">
+      <button class="btn primary big" id="stop-aftercare">סיום הערב ומעבר ל״אחרי״</button>
+      <button class="btn ghost" id="stop-resume">הייתה רק הפסקה, חזרה</button>
+      <button class="btn ghost danger" id="stop-end">סיום בלי כלום</button>
+    </div>
+  </div>
+</div>
+
+<!-- דיאלוג כללי -->
+<div class="overlay" id="dlg" hidden>
+  <div class="overlay-card" id="dlg-card"></div>
+</div>
+
+<!-- סרגל תחתון -->
+<nav class="tabbar" id="tabbar" hidden>
+  <button data-tab="home"><svg class="il"><use href="#il-lotus"/></svg><span>ערב</span></button>
+  <button data-tab="random"><svg class="il"><use href="#il-dice"/></svg><span>קלף</span></button>
+  <button data-tab="dice"><svg class="il"><use href="#il-infinity"/></svg><span>קוביות</span></button>
+  <button data-tab="timer"><svg class="il"><use href="#il-stopwatch"/></svg><span>טיימר</span></button>
+  <button data-tab="more"><svg class="il"><use href="#il-gear"/></svg><span>עוד</span></button>
+</nav>
+
+<script src="js/illustrations.js"></script>
+<script src="js/media.js"></script>
+<script src="js/cards-data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
