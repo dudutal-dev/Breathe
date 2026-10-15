@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.15.2';
+  const APP_VERSION = '2026.10.15.3';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -12,7 +12,7 @@
     setupDone: false,
     partners: { a: { name: '', g: 'm' }, b: { name: '', g: 'f' } },
     dom: 'a', roleMode: 'alternate', safeword: 'עצור',
-    limits: { a: {}, b: {} }, maxLevel: { a: 3, b: 3 }, includeMaybe: false,
+    limits: { a: {}, b: {} }, maxLevel: { a: 3, b: 3 }, includeMaybe: true,
     pinHash: null, keepAwake: true,
     favorites: [], hidden: [], custom: [], session: null,
     media: {}, avatars: { a: false, b: false },
@@ -23,7 +23,16 @@
     customIllus: {},
   });
   let S = load();
-  function load() { try { const j = JSON.parse(localStorage.getItem(KEY)); return j ? Object.assign(DEFAULT(), j) : DEFAULT(); } catch { return DEFAULT(); } }
+  function load() {
+    try {
+      const j = JSON.parse(localStorage.getItem(KEY));
+      if (!j) return DEFAULT();
+      // תיקון: מי שסיים הגדרה בלי לסמן ״כן״ באף קטגוריה קיבל ערב ריק (רק סגירה). מאז ״אולי״ נכלל כברירת מחדל.
+      const anyYes = (l) => l && ['a', 'b'].some((k) => Object.values(l[k] || {}).includes('yes'));
+      if (j.includeMaybe === false && !anyYes(j.limits)) { j.includeMaybe = true; localStorage.setItem(KEY, JSON.stringify(j)); }
+      return Object.assign(DEFAULT(), j);
+    } catch { return DEFAULT(); }
+  }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* מלא */ } }
 
   // ---------- מילון ----------
@@ -69,6 +78,11 @@
   function pool() {
     const ml = maxLevel();
     return allCards().filter((c) => c.cat !== AFTERCARE_ID && catAllowed(c.cat) && c.lvl <= ml && !S.hidden.includes(c.id));
+  }
+
+  function noCardsDialog() {
+    dialog('<h2>אין משימות זמינות</h2><p>כרגע אף קטגוריה לא מותרת, אז הערב היה מכיל רק את כרטיס הסגירה. סמנו ״כן״ או ״אולי״ בקטגוריות (״אולי״ נכלל כברירת מחדל) או הגדילו את העומק.</p>',
+      [{ label: 'לגבולות ועומק', cls: 'primary', onClick: () => show('limits') }, { label: 'סגירה' }]);
   }
 
   // ---------- ניווט ----------
@@ -331,6 +345,7 @@
   $('#btn-swap').addEventListener('click', () => { S.dom = sub(); save(); renderHome(); if (S.session) { /* הכרטיסים מתרנדרים מחדש בעת הצגה */ } });
   $('#btn-new').addEventListener('click', () => {
     const go = () => {
+      if (!pool().length) { noCardsDialog(); return true; }
       if (S.roleMode === 'random') {
         S.dom = Math.random() < 0.5 ? 'a' : 'b'; S.eveningAlt = Math.random() < 0.5; save();
         const c = ctx();
@@ -369,7 +384,7 @@
   function startPlay(mode) { playMode = mode; show('play'); renderPlay(); requestWake(); }
   function pickRandom() {
     const p = pool();
-    if (!p.length) { dialog('<h2>אין משימות</h2><p>שניכם צריכים לסמן לפחות קטגוריה אחת ״כן״, או להפעיל ״לכלול אולי״.</p>', [{ label: 'לגבולות', cls: 'primary', onClick: () => show('limits') }, { label: 'סגירה' }]); return null; }
+    if (!p.length) { noCardsDialog(); return null; }
     let c; do { c = p[Math.floor(Math.random() * p.length)]; } while (p.length > 1 && randomCard && c.id === randomCard.id);
     if (alternating() && randomCard) flipRoles();
     randomCard = c; save(); return c;
@@ -1052,7 +1067,7 @@ EXAMPLE two bodies entwined:
     if (a === 'dice') { tvView = 'dice'; return renderTv(); }
     if (a === 'card') { if (!S.session && !randomCard) { playMode = 'random'; pickRandom(); } tvView = 'card'; return renderTv(); }
     if (a === 'roll') { if (rolling) return; rolling = true; const sets = diceSets(), pick = (x) => x[Math.floor(Math.random() * x.length)]; let n = 0; const iv = setInterval(() => { diceResult = { action: pick(sets.action), body: pick(sets.body), time: pick(sets.time) }; if (++n >= 8) { clearInterval(iv); rolling = false; if (alternating()) { flipRoles(); save(); } } renderTv(); }, 90); return; }
-    if (a === 'start') { if (S.roleMode === 'random') { S.dom = Math.random() < 0.5 ? 'a' : 'b'; S.eveningAlt = Math.random() < 0.5; } buildSession(); playMode = 'session'; tvView = 'card'; return renderTv(); }
+    if (a === 'start') { if (!pool().length) { noCardsDialog(); return; } if (S.roleMode === 'random') { S.dom = Math.random() < 0.5 ? 'a' : 'b'; S.eveningAlt = Math.random() < 0.5; } buildSession(); playMode = 'session'; tvView = 'card'; return renderTv(); }
     if (a === 'random') { playMode = 'random'; pickRandom(); tvView = 'card'; return renderTv(); }
     if (a === 'finish') { S.session = null; save(); return renderTv(); }
     if (a === 'cast') return tvCast();
