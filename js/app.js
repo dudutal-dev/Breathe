@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.15.11';
+  const APP_VERSION = '2026.10.15.12';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1210,7 +1210,7 @@ EXAMPLE two bodies entwined:
   // ל/ב/כ לפני ה׳ הידיעה בולעות אותה: "להגבר" -> "לגבר", "באשה" ולא "בהאשה"
   const fixHe = (t) => t.replace(/(^|[\s״"'(,.:;!?-])([לבכ])ה(גבר|אשה)/g, '$1$2$3');
   const DEFAULT_PROMPT_STYLE = 'Cinematic photorealistic scene. The two adult characters exactly as in the attached reference image (keep faces, hair, bodies and skin tone identical; the man and the woman from the reference). Warm candlelit room at night, sand and indigo tones, linen and warm wood, soft golden light, 85mm lens, shallow depth of field, soft film grain, slow, tender and intimate. No text, no watermark, no extra people.';
-  const DEFAULT_PROMPT_VIDEO = '10 seconds, one continuous shot, no cuts, no text. Slow push-in on a gimbal, candle flicker on skin, shallow focus, natural breathing. 0-2s: the starting position described in ACTION. 2-8s: the movement described in ACTION, continuous and clearly readable. 8-10s: the END FRAME described in ACTION, held still.';
+  const DEFAULT_PROMPT_VIDEO = '10 seconds, one continuous shot, no cuts, no text. Slow push-in on a gimbal, candle flicker on skin, shallow focus, natural breathing. 0-2s: the START position exactly as described. 2-8s: the MOVE, continuous and clearly readable, nothing added. 8-10s: the END FRAME, held still.';
   const CAT_EN = { gaze: 'eye gazing and shared breathing', touch: 'slow touch and oil massage', genital: 'yoni / lingam massage (genital massage as ritual)', energy: 'energy build-up, breath and edging', union: 'slow sex, positions and union', voice: 'voice, sounds and words', ritual: 'ritual and ceremony', worship: 'body worship and oral pleasure', aftercare: 'closing, holding' };
   const DEFAULT_PROMPT_ACT = 'Show exactly the ACTION above and nothing else: the same two people, the same positions, the same body parts, the same movement, the same end frame. Do not add people, objects or a different activity; do not cut away, do not change position mid-shot. The action and the body parts involved stay in frame and unobstructed from the first frame to the last. Where penetration is described, the lingam is visibly inside the yoni (or the finger inside the anus or yoni) exactly as written; where the mouth is described, the lips and tongue are on the exact part named. Any fluid comes only from where it is named: oil from the jug, bottle or candle onto the skin, the yoni\'s own wetness, saliva from the mouth onto the skin; nothing else and nowhere else.';
   function buildPrompt(c, v, kind) {
@@ -1220,11 +1220,20 @@ EXAMPLE two bodies entwined:
     const style = (S.promptStyle || DEFAULT_PROMPT_STYLE).trim();
     const video = (S.promptVideo || DEFAULT_PROMPT_VIDEO).trim();
     const act = (S.promptAct || DEFAULT_PROMPT_ACT).trim();
-    const action = shot ? `ACTION (show exactly this): ${shot}` : `ACTION (show exactly this; it is written as a task for the couple, perform it literally): ${en || e.text}`;
+    // פירוק תיאור הצילום לשלושה שלבים מפורשים: פתיחה, תנועה, פריים סיום (מיפוי ישיר לציר הזמן של הסרטון)
+    const beatsOf = (t) => {
+      const m = t.match(/^([\s\S]*?)(?:\s*End frame:\s*([\s\S]*))?$/); const bodyT = (m && m[1] || t).trim(); const endT = (m && m[2] || '').trim();
+      let sents = bodyT.split(/(?<=\.)\s+/).filter(Boolean);
+      if (sents.length < 2) { const parts = bodyT.split(/;\s*/); sents = parts.length > 1 ? [parts[0].replace(/\.?$/, '.'), parts.slice(1).join('; ')] : [bodyT]; }
+      return { start: sents[0], move: sents.length > 1 ? sents.slice(1).join(' ') : sents[0], end: endT };
+    };
+    const bt = shot ? beatsOf(shot) : null;
+    const action = bt
+      ? `ACTION, in three beats that the video follows in order.\nSTART (position before anything moves): ${bt.start}\nMOVE (the act itself, continuous, exactly this and nothing else): ${bt.move}${bt.end ? `\nEND FRAME (held still at the end): ${bt.end}` : ''}`
+      : `ACTION (show exactly this; it is written as a task for the couple, perform it literally): ${en || e.text}`;
     const perf = c.to === 'B' ? 'Both do it together.' : `${cap(c.to === 'D' ? giver : recv)} is the one carrying out the instruction; the other responds.`;
     // תמונה: פריים המפתח של האקט (בלי שלב ההכנה ובלי פריים הסיום), ומה התמונה צריכה להגיד במבט אחד
-    const sents = (shot || '').split(/(?<=\.)\s+/).filter(Boolean);
-    const body = sents.filter((t) => !/^End frame/i.test(t));
+    const body = bt ? [bt.start, bt.move] : [];
     const keyFrame = shot
       ? `KEY FRAME (this is the picture): ${body.join(' ')} Of all this, show the single instant in which the act is at its fullest: the contact, the stream, the grip or the insertion described, fully happening, with the position and the body parts named all visible at once and filling the frame. Not the moment before it and not the aftermath.`
       : `KEY FRAME (this is the picture): the single instant in which this task is at its fullest, the act itself happening, with both people and the body parts involved clearly visible and filling the frame. Not the setup and not the aftermath. The task: ${en || e.text}`;
