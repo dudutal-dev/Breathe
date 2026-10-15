@@ -410,3 +410,8 @@ body.tv-receiver #scr-tv::after{display:none}
 .tv-stage{background:radial-gradient(70% 60% at 30% 40%,#5a2a4a 0%,transparent 60%),radial-gradient(40% 50% at 85% 80%,#4a2420 0%,transparent 60%),#150a14}
 .tv-art{background:radial-gradient(circle at 50% 42%,#a04a5a 0%,#5a2a4a 40%,#2a1424 72%,transparent 74%);box-shadow:0 0 8cqw #c9627a33}
 .tv-art .il{color:var(--gold2)}
+
+.list-filters{position:sticky;top:0;z-index:3;background:var(--bg);padding-top:8px;margin:0 -2px 6px}
+.list-filters .chip{font:inherit;font-size:.85rem;cursor:pointer;background:var(--panel)}
+.list-filters .chip small{opacity:.7;margin-inline-start:2px}
+.list-filters .chip.on{background:var(--panel2)}
