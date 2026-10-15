@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.15.6';
+  const APP_VERSION = '2026.10.15.7';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -86,13 +86,13 @@
   }
 
   // ---------- ניווט ----------
-  const SCREENS = ['lock', 'setup', 'home', 'play', 'dice', 'timer', 'more', 'editor', 'cardform', 'limits', 'safety', 'tts', 'ai', 'tv', 'list'];
+  const SCREENS = ['lock', 'setup', 'home', 'play', 'dice', 'timer', 'more', 'editor', 'cardform', 'limits', 'safety', 'tts', 'ai', 'tv', 'list', 'about'];
   const TABS = { home: 'home', random: 'play', dice: 'dice', timer: 'timer', more: 'more' };
   let current = 'home';
   function show(name) {
     current = name;
     SCREENS.forEach((s) => { $('#scr-' + s).hidden = s !== name; });
-    const tabbarOn = !['lock', 'setup'].includes(name);
+    const tabbarOn = !['lock', 'setup'].includes(name) && !(name === 'about' && !S.setupDone);
     $('#tabbar').hidden = !tabbarOn;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', TABS[b.dataset.tab] === name && !(name === 'play' && b.dataset.tab === 'random' && playMode === 'session')));
     window.scrollTo(0, 0);
@@ -104,6 +104,7 @@
     if (name === 'tts') renderTts();
     if (name === 'ai') renderAi();
     if (name === 'list') renderCopyList();
+    if (name === 'about') { const b = $('#about-back'); b.dataset.go = S.setupDone ? 'more' : 'setup'; b.textContent = S.setupDone ? '‹ עוד' : '‹ חזרה'; window.scrollTo(0, 0); }
   }
   $$('#tabbar button').forEach((b) => b.addEventListener('click', () => {
     const t = b.dataset.tab;
@@ -190,7 +191,7 @@
 
   // ---------- הגדרה ראשונית ----------
   let setupStep = 0, setupOnlyPartners = false, limitsFor = null, draft = null;
-  const STEPS = ['ברוכים הבאים', 'מי אתם', 'גבולות', 'גבולות', 'סיכום'];
+  const STEPS = ['פתיחה', 'מי אתם', 'גבולות', 'גבולות', 'סיכום'];
   function startSetup(step = 0, onlyPartners = false) {
     setupOnlyPartners = onlyPartners; draft = JSON.parse(JSON.stringify({ partners: S.partners, dom: S.dom, roleMode: S.roleMode, safeword: S.safeword }));
     setupStep = step; show('setup'); renderSetup();
@@ -200,19 +201,22 @@
     const body = $('#setup-body');
     if (setupStep === 0) {
       body.innerHTML = `
-        <div class="home-emblem"><svg class="il"><use href="#il-lotus"/></svg></div>
-        <h1 class="brand center">נשימה</h1>
-        <p class="lead">ערב טנטרי לשניכם: נשימה, מבט, מגע איטי, עיסוי, חיבור. טקס שמכבד את הגבולות של שניכם, ומילה אחת שעוצרת הכול.</p>
-        <div class="consent">
-          <label><input type="checkbox" id="ck1"> שנינו מעל גיל 18.</label>
-          <label><input type="checkbox" id="ck2"> שנינו כאן מרצון, וכל אחד יכול לעצור בכל רגע בלי להסביר.</label>
-          <label><input type="checkbox" id="ck3"> מה שלא סוכם מראש לא קורה הערב.</label>
-        </div>
-        <button class="btn primary big" id="su-next" disabled>מתחילים</button>
-        <p class="muted tiny">הכול נשמר רק בטלפון הזה. אין חשבון, אין שרת, אין איסוף נתונים.</p>`;
-      const upd = () => { $('#su-next').disabled = !($('#ck1').checked && $('#ck2').checked && $('#ck3').checked); };
-      $$('.consent input', body).forEach((i) => i.addEventListener('change', upd));
+        <div class="hero">
+          <div class="home-emblem"><svg class="il"><use href="#il-embrace"/></svg></div>
+          <h1 class="brand center">נשימה</h1>
+          <p class="tagline">לאט. נוכחים. יחד.</p>
+          <p class="lead center">ערב טנטרי לשניכם: נשימה, מבט, מגע איטי, עיסוי יוני ולינגאם, חיבור. טקס בלי יעד, ומילה אחת שעוצרת הכול.</p>
+          <div class="pillars">
+            <div class="pillar">${illus('breath')}<b>נשימה</b><small>הכלי המרכזי</small></div>
+            <div class="pillar">${illus('hands')}<b>מגע איטי</b><small>נותן/ת ומקבל/ת</small></div>
+            <div class="pillar">${illus('infinity')}<b>אין יעד</b><small>יש זמן</small></div>
+          </div>
+          <button class="btn primary big" id="su-next">מתחילים</button>
+          <button class="btn ghost" id="su-about">מה זו טנטרה? הסבר מעמיק</button>
+          <p class="muted tiny center">הכול נשמר רק בטלפון הזה. אין חשבון, אין שרת, אין איסוף נתונים.</p>
+        </div>`;
       $('#su-next').addEventListener('click', () => { setupStep = 1; renderSetup(); });
+      $('#su-about').addEventListener('click', () => show('about'));
     } else if (setupStep === 1) {
       const p = draft.partners;
       body.innerHTML = `
