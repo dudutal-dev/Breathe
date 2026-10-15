@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.15.7';
+  const APP_VERSION = '2026.10.15.8';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1167,22 +1167,26 @@ EXAMPLE two bodies entwined:
   // ל/ב/כ לפני ה׳ הידיעה בולעות אותה: "להגבר" -> "לגבר", "באשה" ולא "בהאשה"
   const fixHe = (t) => t.replace(/(^|[\s״"'(,.:;!?-])([לבכ])ה(גבר|אשה)/g, '$1$2$3');
   const DEFAULT_PROMPT_STYLE = 'Cinematic photorealistic scene. The two adult characters exactly as in the attached reference image (keep faces, hair, bodies and skin tone identical; the man and the woman from the reference). Warm candlelit room at night, sand and indigo tones, linen and warm wood, soft golden light, 85mm lens, shallow depth of field, soft film grain, slow, tender and intimate. No text, no watermark, no extra people.';
-  const DEFAULT_PROMPT_VIDEO = '10 second video, one continuous shot, no cuts, no text. Camera: very slow push-in, candle flicker on skin, visible slow breathing, unhurried continuous movement. Timeline: 0-2s the starting position, 2-8s the practice itself performed step by step so it reads clearly, 8-10s the final position held with the receiver\'s response. The camera never leaves the act.';
+  const DEFAULT_PROMPT_VIDEO = '10 seconds, one continuous shot, no cuts, no text. Slow push-in on a gimbal, candle flicker on skin, shallow focus, natural breathing. 0-2s: the starting position described in ACTION. 2-8s: the movement described in ACTION, continuous and clearly readable. 8-10s: the END FRAME described in ACTION, held still.';
   const CAT_EN = { gaze: 'eye gazing and shared breathing', touch: 'slow touch and oil massage', genital: 'yoni / lingam massage (genital massage as ritual)', energy: 'energy build-up, breath and edging', union: 'slow sex, positions and union', voice: 'voice, sounds and words', ritual: 'ritual and ceremony', worship: 'body worship and oral pleasure', aftercare: 'closing, holding' };
-  const DEFAULT_PROMPT_ACT = 'Demonstrate the practice clearly, like a tantra tutorial: the exact touch, hand placement, breath, positions and body parts named in the scene are in frame, unobstructed and unmistakable at first glance. Show both the giver performing the action and the receiver responding (face, breathing, body). Frame wide enough to read the whole posture, close enough to see the hands. No symbolism, no cutaways: the practice itself is the subject of the shot.';
+  const DEFAULT_PROMPT_ACT = 'Show exactly the ACTION above and nothing else: the same two people, the same positions, the same body parts, the same movement, the same end frame. Do not add people, objects or a different activity; do not cut away, do not change position mid-shot. The action and the body parts involved stay in frame and unobstructed from the first frame to the last.';
   function buildPrompt(c, v, kind) {
     const e = entryText(c, v);
     const man = v.key === 'm', giver = man ? 'the man' : 'the woman', recv = man ? 'the woman' : 'the man';
-    const roles = `Roles: ${giver} from the reference image gives and performs the action on ${recv}; ${recv} receives.`;
-    const perf = c.to === 'B' ? 'Both do the scene together.' : `The instruction is addressed to ${c.to === 'D' ? giver : recv}, who carries it out; the other partner responds.`;
+    const shot = shotFor(c, v), en = enFor(c, v), cap = (t) => t[0].toUpperCase() + t.slice(1);
     const style = (S.promptStyle || DEFAULT_PROMPT_STYLE).trim();
-    const video = kind === 'video' ? ' ' + (S.promptVideo || DEFAULT_PROMPT_VIDEO).trim() : '';
+    const video = (S.promptVideo || DEFAULT_PROMPT_VIDEO).trim();
     const act = (S.promptAct || DEFAULT_PROMPT_ACT).trim();
-    const dur = kind === 'video' && c.min ? ` The real thing lasts about ${c.min} minutes; compress it into the clip but keep the key moves in order.` : '';
-    const theme = `Theme: ${CAT_EN[c.cat] || (catOf(c.cat) || {}).name || ''}. Intensity ${c.lvl ? c.lvl + ' of 3' : 'closing'}.`;
-    const en = enFor(c, v);
-    const scene = en ? `Scene (this is the act to demonstrate; follow it literally): ${en}` : `Scene (Hebrew task text; translate it and demonstrate it literally): ${e.text}`;
-    return `${style}${video}\n${roles} ${perf}\n${theme}\n${act}${dur}\n${scene}`;
+    const action = shot ? `ACTION (show exactly this): ${shot}` : `ACTION (show exactly this; it is written as a task for the couple, perform it literally): ${en || e.text}`;
+    const perf = c.to === 'B' ? 'Both do it together.' : `${cap(c.to === 'D' ? giver : recv)} is the one carrying out the instruction; the other responds.`;
+    const lines = [
+      action,
+      `PEOPLE: the man and the woman from the attached reference image, no one else. ${cap(giver)} gives and performs the action on ${recv}; ${recv} receives. ${perf}`,
+      `LOOK: ${style}`,
+      kind === 'video' ? `VIDEO: ${video}` : 'STILL IMAGE: capture the moment of the movement itself, mid-action, not the end frame.',
+      `RULES: ${act}`,
+    ];
+    return lines.join('\n');
   }
   function entryText(c, v) { const who = c.to === 'B' ? 'לשניהם' : fixHe('ל' + (c.to === 'D' ? v.ctx.D : v.ctx.S)); return { who, text: fixHe(toPlain(render(c.text, v.ctx))) }; }
   // ---------- תרגום המשימות לאנגלית (לפרומפטים) ----------
@@ -1191,6 +1195,7 @@ EXAMPLE two bodies entwined:
   const hashStr = (t) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h.toString(36); };
   const EN_CTX = { m: { D: 'the man', S: 'the woman', dg: 'm', sg: 'f' }, f: { D: 'the woman', S: 'the man', dg: 'f', sg: 'm' } };
   const capEn = (t) => t.replace(/(^|[.!?:]\s+|["“(]\s*)(the (?:man|woman))/g, (m, p, w) => p + w[0].toUpperCase() + w.slice(1));
+  function shotFor(c, v) { return (typeof CARDS_SHOT !== 'undefined' && CARDS_SHOT[c.id]) ? capEn(toPlain(render(CARDS_SHOT[c.id], EN_CTX[v.key]))) : null; }
   function enFor(c, v) {
     if (typeof CARDS_EN !== 'undefined' && CARDS_EN[c.id]) return capEn(toPlain(render(CARDS_EN[c.id], EN_CTX[v.key])));
     const e = (S.en || {})[enKey(c, v)]; if (!e) return null; return e.h === hashStr(entryText(c, v).text) ? e.t : null;
@@ -1235,8 +1240,8 @@ EXAMPLE two bodies entwined:
     host.innerHTML = groups.map(({ cat, cards }) => {
       const lines = [];
       const rows = cards.map((c, i) => COPY_CTX.map((v) => {
-        const e = entryText(c, v); const line = `${e.text}`; lines.push(line); all.push(line); const en = enFor(c, v); if (!en) missing.push({ c, v }); else translated++;
-        return `<div class="cp-row"><div class="cp-head"><span class="chip ${v.key === 'm' ? 'cat' : 'to'}">${v.label}</span><small>הוראה ${e.who} · עומק ${c.lvl || 'סגירה'}</small></div><p>${esc(e.text)}</p>${en ? `<p class="en" dir="ltr">${esc(en)}</p>` : ''}<div class="cp-actions"><button class="btn ghost small cp-btn" data-copy="${esc(e.text)}">העתקה</button>${en ? `<button class="btn ghost small cp-btn" data-copy="${esc(en)}">English</button>` : ''}<button class="btn ghost small cp-btn" data-prompt="image" data-id="${c.id}" data-v="${v.key}">פרומפט תמונה</button><button class="btn ghost small cp-btn" data-prompt="video" data-id="${c.id}" data-v="${v.key}">פרומפט סרטון</button></div></div>`;
+        const e = entryText(c, v); const line = `${e.text}`; lines.push(line); all.push(line); const en = enFor(c, v), shot = shotFor(c, v); if (!en) missing.push({ c, v }); else translated++;
+        return `<div class="cp-row"><div class="cp-head"><span class="chip ${v.key === 'm' ? 'cat' : 'to'}">${v.label}</span><small>הוראה ${e.who} · עומק ${c.lvl || 'סגירה'}</small></div><p>${esc(e.text)}</p>${en ? `<p class="en" dir="ltr">${esc(en)}</p>` : ''}${shot ? `<p class="en shot" dir="ltr"><b>Shot:</b> ${esc(shot)}</p>` : ''}<div class="cp-actions"><button class="btn ghost small cp-btn" data-copy="${esc(e.text)}">העתקה</button>${en ? `<button class="btn ghost small cp-btn" data-copy="${esc(en)}">English</button>` : ''}<button class="btn ghost small cp-btn" data-prompt="image" data-id="${c.id}" data-v="${v.key}">פרומפט תמונה</button><button class="btn ghost small cp-btn" data-prompt="video" data-id="${c.id}" data-v="${v.key}">פרומפט סרטון</button></div></div>`;
       }).join('')).join('');
       return `<section class="cp-group" data-cat="${cat.id}"><div class="cp-group-head">${illus(cat.img)}<h2>${cat.name}</h2><small>${cards.length} משימות × 2</small><button class="btn ghost small" data-copy-all="${esc(lines.join('\n\n'))}">העתקת הקטגוריה</button></div>${rows}</section>`;
     }).join('');
