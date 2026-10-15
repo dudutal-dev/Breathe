@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.15.24';
+  const APP_VERSION = '2026.10.15.25';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -364,20 +364,26 @@
   });
   $('#btn-resume').addEventListener('click', () => startPlay('session'));
 
+  // חום של קטגוריה: סדר הערב בתוך כל רמה הולך מהעדין אל הלוהט
+  const CAT_HEAT = { gaze: 0, ritual: 1, voice: 2, touch: 3, energy: 4, worship: 5, genital: 6, union: 7 };
+  const heatOf = (c) => c.lvl * 1000 + (CAT_HEAT[c.cat] !== undefined ? CAT_HEAT[c.cat] : 6) * 10 + (c.min ? Math.min(c.min, 9) * 0.1 : 0);
   function buildSession() {
     const p = shuffle(pool());
     const pick = (lvl, n) => { const out = []; for (const c of p) { if (c.lvl === lvl && !used.has(c.id) && out.length < n) { out.push(c); used.add(c.id); } } return out; };
     const used = new Set();
-    const plan = [[1, 3], [2, 4], [3, 4]];
+    // ארבעה קלפים עדינים לפתיחה, ארבעה באמצע, ארבעה לוהטים לסיום
+    const plan = [[1, 4], [2, 4], [3, 4]];
     let seq = [];
     plan.forEach(([l, n]) => { seq = seq.concat(pick(l, n)); });
     // השלמה אם חסר ברמות מסוימות
-    const target = Math.min(11, p.length);
+    const target = Math.min(12, p.length);
     for (const c of p) { if (seq.length >= target) break; if (!used.has(c.id)) { seq.push(c); used.add(c.id); } }
-    seq.sort((x, y) => x.lvl - y.lvl); // מתחמם לאט: 1 → 2 → 3
-    // מועדפים קודם בתוך כל רמה? לא – אקראי. אבל מבטיחים שלפחות מועדף אחד נכנס אם קיים.
+    // מבטיחים שלפחות מועדף אחד נכנס אם קיים (מחליף קלף באותה רמה)
     const fav = p.find((c) => S.favorites.includes(c.id) && !used.has(c.id));
     if (fav && seq.length) { const i = seq.findIndex((c) => c.lvl === fav.lvl); if (i >= 0) seq[i] = fav; }
+    // מהקל אל הכבד: קודם לפי רמה (1 → 2 → 3), ובתוך כל רמה מהקטגוריה העדינה אל הלוהטת
+    const jitter = new Map(seq.map((c) => [c.id, Math.random() * 4]));
+    seq.sort((x, y) => (heatOf(x) + jitter.get(x.id)) - (heatOf(y) + jitter.get(y.id)));
     const after = shuffle(CARDS.filter((c) => c.cat === AFTERCARE_ID))[0];
     S.session = { cards: seq.map((c) => c.id).concat(after ? [after.id] : []), idx: 0, startedAt: Date.now() };
     save();
@@ -399,7 +405,8 @@
   function sessionAdvance() { const s = S.session; if (!s) return; s.idx++; if (alternating() && s.idx < s.cards.length) flipRoles(); save(); }
   function sessionSkip(c) {
     const s = S.session; if (!s) return;
-    const alt = shuffle(pool()).find((x) => x.lvl === c.lvl && !s.cards.includes(x.id));
+    // תחליף באותה רמה, הכי קרוב בחום לקלף שדולג, כדי לא לשבור את העלייה ההדרגתית
+    const alt = shuffle(pool()).filter((x) => x.lvl === c.lvl && !s.cards.includes(x.id)).sort((x, y) => Math.abs(heatOf(x) - heatOf(c)) - Math.abs(heatOf(y) - heatOf(c)))[0];
     if (alt) s.cards[s.idx] = alt.id; else s.idx++;
     save();
   }
