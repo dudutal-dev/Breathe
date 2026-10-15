@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.15.8';
+  const APP_VERSION = '2026.10.15.9';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1169,7 +1169,7 @@ EXAMPLE two bodies entwined:
   const DEFAULT_PROMPT_STYLE = 'Cinematic photorealistic scene. The two adult characters exactly as in the attached reference image (keep faces, hair, bodies and skin tone identical; the man and the woman from the reference). Warm candlelit room at night, sand and indigo tones, linen and warm wood, soft golden light, 85mm lens, shallow depth of field, soft film grain, slow, tender and intimate. No text, no watermark, no extra people.';
   const DEFAULT_PROMPT_VIDEO = '10 seconds, one continuous shot, no cuts, no text. Slow push-in on a gimbal, candle flicker on skin, shallow focus, natural breathing. 0-2s: the starting position described in ACTION. 2-8s: the movement described in ACTION, continuous and clearly readable. 8-10s: the END FRAME described in ACTION, held still.';
   const CAT_EN = { gaze: 'eye gazing and shared breathing', touch: 'slow touch and oil massage', genital: 'yoni / lingam massage (genital massage as ritual)', energy: 'energy build-up, breath and edging', union: 'slow sex, positions and union', voice: 'voice, sounds and words', ritual: 'ritual and ceremony', worship: 'body worship and oral pleasure', aftercare: 'closing, holding' };
-  const DEFAULT_PROMPT_ACT = 'Show exactly the ACTION above and nothing else: the same two people, the same positions, the same body parts, the same movement, the same end frame. Do not add people, objects or a different activity; do not cut away, do not change position mid-shot. The action and the body parts involved stay in frame and unobstructed from the first frame to the last.';
+  const DEFAULT_PROMPT_ACT = 'Show exactly the ACTION above and nothing else: the same two people, the same positions, the same body parts, the same movement, the same end frame. Do not add people, objects or a different activity; do not cut away, do not change position mid-shot. The action and the body parts involved stay in frame and unobstructed from the first frame to the last. Where penetration is described, the lingam is visibly inside the yoni (or the finger inside the anus or yoni) exactly as written; where the mouth is described, the lips and tongue are on the exact part named. Any fluid comes only from where it is named: oil from the jug, bottle or candle onto the skin, the yoni\'s own wetness, saliva from the mouth onto the skin; nothing else and nowhere else.';
   function buildPrompt(c, v, kind) {
     const e = entryText(c, v);
     const man = v.key === 'm', giver = man ? 'the man' : 'the woman', recv = man ? 'the woman' : 'the man';
