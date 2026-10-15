@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.15.18';
+  const APP_VERSION = '2026.10.15.19';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -763,6 +763,7 @@
     return `<div class="seg ${cls}"><button type="button" data-vp="personal" class="${t === 'personal' ? 'on' : ''}">סרטון אישי</button><button type="button" data-vp="demo" class="${t === 'demo' ? 'on' : ''}">הדגמה</button></div>`;
   }
   function mediaArtHtml(c, cls = 'art') {
+    if (SAFE_MODE) return null;
     const m = S.media[c.id] || {};
     const v = activeVidSlot(m);
     const i = activeImgSlot(m);
@@ -774,6 +775,7 @@
   function freeUrls() { liveUrls.forEach((u) => URL.revokeObjectURL(u)); liveUrls = []; }
   function avatarHtml(k, size) { return `<span class="avatar ${size}" data-avatar="${k}">${illus(k === S.dom ? 'sun' : 'moon')}</span>`; }
   async function hydrateAvatars(root) {
+    if (SAFE_MODE) return;
     for (const el of $$('[data-avatar]', root)) {
       const k = el.dataset.avatar, rec = S.avatars[k] ? await Media.getFile('avatar_' + k) : null;
       if (rec && rec.blob) { const u = URL.createObjectURL(rec.blob); liveUrls.push(u); el.style.backgroundImage = `url(${u})`; el.classList.add('has'); }
@@ -1374,11 +1376,13 @@ EXAMPLE two bodies entwined:
   }
 
   // ---------- אתחול ----------
+  const SAFE_MODE = (() => { try { return sessionStorage.getItem('safe') === '1' || location.search.includes('safe=1'); } catch { return false; } })();
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms));
   async function init() {
     $('#sprite').innerHTML = illustrationSprite();
     Object.entries(S.customIllus || {}).forEach(([id, body]) => addCustomIllustration(id, body));
     buildPad();
-    if (Object.values(S.media).some((m) => m && (m.kind || m.vid))) await migrateMedia();
+    if (!SAFE_MODE && Object.values(S.media).some((m) => m && (m.kind || m.vid))) { try { await Promise.race([migrateMedia(), delay(8000)]); } catch (e) { console.warn('migrateMedia', e); } }
     $('#app-version').textContent = 'גרסה ' + APP_VERSION;
     if (location.search.includes('r=')) history.replaceState(null, '', location.pathname);
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').then(watchUpdates).catch(() => {});
@@ -1386,6 +1390,12 @@ EXAMPLE two bodies entwined:
     if (isReceiver) return tvReceiverInit();
     if (S.pinHash) await unlockFlow();
     if (!S.setupDone) startSetup(0); else show('home');
+    if (SAFE_MODE) {
+      const bar = document.createElement('div'); bar.className = 'safe-bar';
+      bar.innerHTML = 'מצב בטוח: תמונות וסרטונים לא מוצגים. <button type="button">חזרה למצב רגיל</button>';
+      bar.querySelector('button').addEventListener('click', () => { try { sessionStorage.removeItem('safe'); } catch { /* */ } location.href = location.pathname + '?r=' + Date.now(); });
+      document.body.appendChild(bar);
+    }
   }
-  init();
+  init().then(() => { window.__bootOk && window.__bootOk(); }).catch((e) => { console.error(e); if (window.__bootFail) window.__bootFail(e); });
 })();
