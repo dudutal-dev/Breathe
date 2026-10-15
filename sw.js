@@ -1,5 +1,5 @@
 // Service worker – רשת קודם כשיש רשת (כדי שגרסה חדשה תיכנס לבד), מטמון כשאין.
-const CACHE = 'breathe-v13';
+const CACHE = 'breathe-v14';
 const ASSETS = [
   './', './index.html', './css/style.css',
   './js/app.js', './js/cards-data.js', './js/cards-en.js', './js/illustrations.js', './js/media.js', './js/backup.js',
