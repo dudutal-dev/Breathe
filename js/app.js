@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.14.1';
+  const APP_VERSION = '2026.10.15.2';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -855,13 +855,13 @@
   const AI_MODELS = [['claude-opus-5-5', 'Opus 5.5 (ברירת מחדל, הכי טוב)'], ['claude-sonnet-5-5', 'Sonnet 5.5 (זול יותר)'], ['claude-haiku-5-5', 'Haiku 5.5 (הכי זול)']];
   const AI_STYLE = `You draw icons for a Hebrew tantra-for-couples app. Output ONLY the inner markup of an SVG <symbol> (no <svg>, no <symbol>, no code fences, no prose).
 Canvas: viewBox 0 0 100 100, keep a 6 unit margin. Allowed elements: path, circle, ellipse, rect, line, polyline, polygon. 3 to 12 elements.
-Style: soft sacred line art. A single elegant saffron-gold line on indigo (stroke is inherited: do NOT set stroke or stroke-width; fill is inherited as none). Small accents may use fill="currentColor" (dots). Dashed detail lines may use stroke-dasharray="3 4". No text, no gradients, no defs, no filters, no images.
-Subject: tender, slow, adult intimacy: lotus, breath waves, two seated figures forehead to forehead, hands on a heart, candle, oil, a back, an eye, a mandala. Sensual, never explicit genitals. Keep it minimal and readable at 40px.
+Style: soft sensual line art. A single elegant rose-gold line on deep plum (stroke is inherited: do NOT set stroke or stroke-width; fill is inherited as none). Small accents may use fill="currentColor" (dots). Dashed detail lines may use stroke-dasharray="3 4". No text, no gradients, no defs, no filters, no images.
+Subject: tender, slow, adult intimacy: two bodies entwined, a back arching, a hand on a hip, lips near a neck, two faces about to kiss, a bare shoulder with hair, candle, oil, lotus. Sensual, never explicit genitals. Keep it minimal and readable at 40px.
 Two examples of the house style:
 EXAMPLE lotus:
 ` + ILLUSTRATIONS.lotus + `
-EXAMPLE two figures (yab-yum):
-` + ILLUSTRATIONS.yabyum;
+EXAMPLE two bodies entwined:
+` + ILLUSTRATIONS.embrace;
   const SVG_TAGS = new Set(['path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon']);
   const SVG_ATTRS = new Set(['d', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'width', 'height', 'points', 'x1', 'y1', 'x2', 'y2', 'fill', 'stroke-dasharray', 'stroke-width', 'opacity', 'transform', 'stroke-linecap', 'stroke-linejoin']);
   function sanitizeSvgBody(raw) {
