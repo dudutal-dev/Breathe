@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.18.39';
+  const APP_VERSION = '2026.10.18.40';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -445,6 +445,9 @@
     const el = $('#peek'); if (el) { el.classList.remove('clean'); $('.peek-hint', el).hidden = true; const v = $('video', el); if (v) { v.pause(); v.removeAttribute('src'); } $('.peek-stage', el).innerHTML = ''; el.hidden = true; }
     peek.urls.forEach((u) => URL.revokeObjectURL(u)); peek = null; document.body.classList.remove('peek-on');
   }
+  // טיזר: מילה אחת לכל משימה, לפי הקטגוריה, בלי לגלות את המשימה עצמה
+  const PEEK_TEASE = {"gaze": [["מבט", "נשימה", "שקט"], ["Gaze", "Breath", "Quiet"]], "touch": [["מגע", "שמן", "לאט"], ["Touch", "Oil", "Slow"]], "genital": [["טקס", "עדינות", "גל"], ["Ritual", "Tenderness", "Wave"]], "energy": [["גל", "סף", "אנרגיה"], ["Wave", "Edge", "Energy"]], "union": [["איחוד", "לאט", "אחד"], ["Union", "Slow", "One"]], "voice": [["קול", "מילה", "צליל"], ["Voice", "Word", "Sound"]], "ritual": [["טקס", "נר", "כוונה"], ["Ritual", "Candle", "Intention"]], "worship": [["הערצה", "שפתיים", "סגידה"], ["Adoration", "Lips", "Worship"]], "aftercare": [["חיבוק", "מים", "שקט"], ["Hold", "Water", "Quiet"]]};
+  function teaseWord(c) { const t = PEEK_TEASE[c.cat]; if (!t) return ''; const list = isEn() ? t[1] : t[0]; let h = 0; for (let k = 0; k < c.id.length; k++) h = (h * 31 + c.id.charCodeAt(k)) >>> 0; return list[h % list.length]; }
   const peekUnitOne = () => (APP_ID === 'masks' ? (isEn() ? 'Scene' : 'סצנה') : (isEn() ? 'Task' : 'משימה'));
   function peekIntro() {
     const el = peekEl(), stage = $('.peek-stage', el), n = S.session ? S.session.cards.length : peek.items.length;
@@ -458,11 +461,11 @@
     const el = peekEl(), stage = $('.peek-stage', el), it = peek.items[i], c = it.c, cat = catOf(c.cat) || { name: '' }, n = S.session ? S.session.cards.length : peek.items.length;
     peek.phase = 'title'; peek.i = i; peek.done = false; peek.paused = false;
     const dots = c.lvl ? '<span class="lvl">' + [1, 2, 3].map((k) => `<i class="${k <= c.lvl ? 'on' : ''}"></i>`).join('') + '</span>' : '';
-    const tease = plainText(c).split(/[.!?؟]/)[0].slice(0, 70);
+    const tease = teaseWord(c);
     const to = c.to === 'B' ? (isEn() ? 'For both of you' : 'לשניכם') : (isEn() ? 'For ' : 'ל') + roleName(c.to);
     $('.peek-prog', el).textContent = `${it.i + 1} / ${n}`; $('.peek-cap', el).hidden = true; $('.peek-bar', el).hidden = false; $('[data-pk=toggle]', el).textContent = '⏸';
     $$('.peek-dots i', el).forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('done', k < i); });
-    stage.innerHTML = `<div class="peek-title"><small>${peekUnitOne()} ${it.i + 1}</small><h1>${esc(cat.name || '')}</h1><div class="pt-meta">${dots}<span class="chip to">${esc(to)}</span></div><p>${esc(tease)}${tease.length >= 70 ? '…' : ''}</p></div>`;
+    stage.innerHTML = `<div class="peek-title"><small>${peekUnitOne()} ${it.i + 1}</small><h1>${esc(cat.name || '')}</h1><div class="pt-meta">${dots}<span class="chip to">${esc(to)}</span></div><p class="pt-word">${esc(tease)}</p></div>`;
     peek.timer = setTimeout(() => peekGo(i, true), 1900);
   }
   async function peekGo(i, afterTitle) {
@@ -479,7 +482,7 @@
     const it = items[i], c = it.c, cat = catOf(c.cat) || { name: '' };
     $('.peek-prog', el).textContent = `${it.i + 1} / ${n}`;
     $('.peek-cap', el).hidden = false; $('.peek-bar', el).hidden = false;
-    $('.peek-cap .chip', el).textContent = cat.name || ''; $('.peek-cap p', el).textContent = plainText(c).slice(0, 140);
+    $('.peek-cap .chip', el).textContent = cat.name || ''; $('.peek-cap p', el).textContent = teaseWord(c);
     $$('.peek-dots i', el).forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('done', k < i); });
     $('[data-pk=toggle]', el).textContent = '⏸';
     stage.innerHTML = `<div class="peek-load">${illus('hourglass')}</div>`;
