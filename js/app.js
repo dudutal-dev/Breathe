@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.19.60';
+  const APP_VERSION = '2026.10.19.61';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -734,6 +734,7 @@
     seg($('#home-mode-seg'), S.roleMode || 'fixed', (v) => { S.roleMode = v; save(); renderHome(); });
     const ses = S.session;
     $('#btn-resume').hidden = !(ses && ses.idx < ses.cards.length);
+    { const open = !!(ses && ses.idx < ses.cards.length), nb = $('#btn-new'); nb.classList.toggle('primary', !open); nb.classList.toggle('big', !open); nb.classList.toggle('ghost', open); }   // ערב פתוח: ״המשך ערב״ הוא הכפתור הראשי היחיד
     const pk = $('#btn-peek'); pk.hidden = !(ses && ses.idx < ses.cards.length && peekItems().length);
     const ev = $('#btn-evideo'); ev.hidden = !(ses && ses.idx < ses.cards.length && window.EveningVideo && EveningVideo.supported()); ev.textContent = isEn() ? '🎬 Evening video (English)' : '🎬 ייצוא הערב לווידאו (אנגלית)'; pk.textContent = isEn() ? '👁 Peek at the evening ahead' : '👁 הצצה לערב שמצפה לנו';
     $('#btn-home-tv').textContent = isEn() ? '📺 TV' : '📺 טלוויזיה'; $('#btn-home-music').textContent = musicBtnLabel();

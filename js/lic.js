@@ -195,7 +195,7 @@ if (typeof I18N !== 'undefined') {
     '🖼🎬 יש מדיה': '🖼🎬 Has media',
     'השמות, הגבולות והבחירות שלכם נשמרים רק בטלפון הזה. אין חשבון.': 'Your names, limits and choices are stored on this phone only. There is no account.',
     'הקראה של הכרטיס בלחיצה על 🔊, בקול של הדפדפן. עובד גם בלי רשת.': 'The card is read aloud when you tap 🔊, in the browser voice. Works offline too.',
-    'סרטון': 'Video',
+    'סרטון': 'Video', '⇄ תפקידים': '⇄ Roles',
   });
   (I18N.rx = I18N.rx || []).push(
     ['^בודק קובץ (\\d+) מתוך (\\d+)$', 'Checking file $1 of $2'], ['^מעלה קובץ (\\d+) מתוך (\\d+) \\((.+)\\)$', 'Uploading file $1 of $2 ($3)'],
