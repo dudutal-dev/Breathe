@@ -193,6 +193,9 @@ if (typeof I18N !== 'undefined') {
     'המשתמשים יקבלו את העדכון בפתיחה הבאה של האפליקציה.': 'Users get the update the next time they open the app.',
     'הכניסה פגה. נסו שוב.': 'The sign-in expired. Try again.', 'בדקו את החיבור לרשת ונסו שוב. קבצים שכבר הועלו לא יועלו פעם נוספת.': 'Check your connection and try again. Files already uploaded are not uploaded again.',
     '🖼🎬 יש מדיה': '🖼🎬 Has media',
+    'השמות, הגבולות והבחירות שלכם נשמרים רק בטלפון הזה. אין חשבון.': 'Your names, limits and choices are stored on this phone only. There is no account.',
+    'הקראה של הכרטיס בלחיצה על 🔊, בקול של הדפדפן. עובד גם בלי רשת.': 'The card is read aloud when you tap 🔊, in the browser voice. Works offline too.',
+    'סרטון': 'Video',
   });
   (I18N.rx = I18N.rx || []).push(
     ['^בודק קובץ (\\d+) מתוך (\\d+)$', 'Checking file $1 of $2'], ['^מעלה קובץ (\\d+) מתוך (\\d+) \\((.+)\\)$', 'Uploading file $1 of $2 ($3)'],

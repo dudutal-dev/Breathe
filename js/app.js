@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.19.59';
+  const APP_VERSION = '2026.10.19.60';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -317,7 +317,7 @@
           </div>
           <button class="btn primary big" id="su-next">מתחילים</button>
           <button class="btn ghost" id="su-about">מה זו טנטרה? הסבר מעמיק</button>
-          <p class="muted tiny center">הכול נשמר רק בטלפון הזה. אין חשבון, אין שרת, אין איסוף נתונים.</p>
+          <p class="muted tiny center">${Lic.valid() ? 'השמות, הגבולות והבחירות שלכם נשמרים רק בטלפון הזה. אין חשבון.' : 'הכול נשמר רק בטלפון הזה. אין חשבון, אין שרת, אין איסוף נתונים.'}</p>
         </div>`;
       $('#su-next').addEventListener('click', () => { setupStep = 1; renderSetup(); });
       wireLang(body);
@@ -1220,7 +1220,7 @@
   function vidToggleHtml(m, cls = 'vid-toggle') {
     if (!(typeAvailable(m, 'personal') && typeAvailable(m, 'demo'))) return '';
     const t = activeVidType(m);
-    return `<div class="seg ${cls}"><button type="button" data-vp="personal" class="${t === 'personal' ? 'on' : ''}">סרטון אישי</button><button type="button" data-vp="demo" class="${t === 'demo' ? 'on' : ''}">הדגמה</button></div>`;
+    return `<div class="seg ${cls}"><button type="button" data-vp="personal" class="${t === 'personal' ? 'on' : ''}">${PLAYER ? 'סרטון' : 'סרטון אישי'}</button><button type="button" data-vp="demo" class="${t === 'demo' ? 'on' : ''}">הדגמה</button></div>`;
   }
   function mediaArtHtml(c, cls = 'art') {
     if (SAFE_MODE) return null;
@@ -1230,7 +1230,7 @@
     const i = activeImgSlot(m);
     const slots = v ? [v] : (i ? [i] : []);
     if (!slots.length) return null;
-    return `<div class="${cls} media ${v ? 'video' : 'image'}">${slots.map((k) => `<div class="m-${isImgSlot(k) ? 'img' : k}" data-media="${mediaKey(c.id, k)}"></div>`).join('')}</div>`;
+    return `<div class="${cls} media ${v ? 'video' : 'image'}">${slots.map((k) => `<div class="m-${isImgSlot(k) ? 'img' : k}" data-media="${mediaKey(c.id, k)}" data-ill="${esc(c.img || '')}"></div>`).join('')}</div>`;
   }
   let liveUrls = [];
   function freeUrls() { liveUrls.forEach((u) => URL.revokeObjectURL(u)); liveUrls = []; }
@@ -1247,7 +1247,7 @@
     hydrateAvatars(root);
     for (const el of $$('[data-media]', root)) {
       const rec = await Media.getFile(el.dataset.media);
-      if (!rec || !rec.blob) { el.innerHTML = illus('camera'); continue; }
+      if (!rec || !rec.blob) { el.innerHTML = illus(PLAYER && el.dataset.ill ? el.dataset.ill : 'camera'); continue; }   // גרסת משתמש הקצה בלי רשת: האיור של המשימה, לא סמל ״הוסיפו תמונה״
       const u = URL.createObjectURL(rec.blob); liveUrls.push(u);
       if (rec.kind === 'video') {
         el.innerHTML = `<video src="${u}" playsinline controls loop autoplay preload="metadata"></video><button type="button" class="vid-expand" title="הגדלה">⛶</button>`;
@@ -1366,8 +1366,8 @@
   function renderTts() {
     const t = S.tts;
     $('#tts-body').innerHTML = `
-      <p class="muted">הקראה של הכרטיס בלחיצה על 🔊. קול הדפדפן עובד אופליין וחינם. ElevenLabs נותן קול הרבה יותר טוב, דורש רשת ומפתח API משלכם, והקלטות נשמרות במכשיר כדי לא לשלם פעמיים על אותו כרטיס.</p>
-      <div class="seg" id="tts-mode"><button type="button" data-v="off">כבוי</button><button type="button" data-v="browser">קול הדפדפן</button><button type="button" data-v="eleven">ElevenLabs</button></div>
+      <p class="muted">${PLAYER ? 'הקראה של הכרטיס בלחיצה על 🔊, בקול של הדפדפן. עובד גם בלי רשת.' : 'הקראה של הכרטיס בלחיצה על 🔊. קול הדפדפן עובד אופליין וחינם. ElevenLabs נותן קול הרבה יותר טוב, דורש רשת ומפתח API משלכם, והקלטות נשמרות במכשיר כדי לא לשלם פעמיים על אותו כרטיס.'}</p>
+      <div class="seg" id="tts-mode"><button type="button" data-v="off">כבוי</button><button type="button" data-v="browser">קול הדפדפן</button>${PLAYER && t.mode !== 'eleven' ? '' : '<button type="button" data-v="eleven">ElevenLabs</button>'}</div>
       <div class="form" id="tts-eleven" ${t.mode === 'eleven' ? '' : 'hidden'}>
         <label>מפתח API (xi-api-key)<input id="tts-key" type="password" value="${esc(t.key)}" placeholder="sk_..." autocomplete="off" dir="ltr"></label>
         <label>מזהה קול (Voice ID)<input id="tts-voice" value="${esc(t.voiceId)}" placeholder="למשל 21m00Tcm4TlvDq8ikWAM" dir="ltr"></label>
@@ -1381,7 +1381,7 @@
       </div>
       <div class="stack">
         <button class="btn primary" id="tts-test" ${t.mode === 'off' ? 'disabled' : ''}>בדיקת קול</button>
-        <button class="btn ghost" id="tts-clear">מחיקת הקלטות שמורות</button>
+        <button class="creator btn ghost" id="tts-clear">מחיקת הקלטות שמורות</button>
       </div>`;
     seg($('#tts-mode'), t.mode, (v) => { t.mode = v; save(); $('#tts-eleven').hidden = v !== 'eleven'; $('#tts-test').disabled = v === 'off'; });
     $('#tts-key').oninput = (e) => { t.key = e.target.value.trim(); save(); };
