@@ -615,3 +615,22 @@ body.peek-on .music-bar{display:none}
 
 .home-tools{margin-top:2px}
 .home-tools .btn{flex:1}
+
+/* קישור הפעלה (js/lic.js): מסך הנעילה ואישור ההפעלה. גרסת משתמש הקצה: כלי היצירה מוסתרים. */
+html.player .creator,html.player #btn-evideo,html.player [data-pk="export"]{display:none !important}
+html.locked body{overflow:hidden}
+.lic-gate{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:24px;padding-top:calc(24px + var(--safe-t));background:var(--bg);overflow-y:auto}
+.lic-box{width:100%;max-width:380px;text-align:center}
+.lic-box img{display:block;margin:0 auto;border-radius:20px;box-shadow:0 10px 30px #0008}
+.lic-box h2{font-size:1.5rem;margin:16px 0 8px;color:var(--gold2)}
+.lic-msg{color:var(--muted);font-size:.95rem;margin:0 0 14px}
+.lic-steps{text-align:start;margin:0 0 16px;padding:12px 34px 12px 14px;border-radius:16px;background:var(--panel);border:1px solid var(--line2);font-size:.9rem;line-height:1.6}
+[dir=ltr] .lic-steps{padding:12px 14px 12px 34px}
+.lic-steps li b{display:block}
+.lic-steps li span{display:block;color:var(--muted);font-size:.82rem;line-height:1.4;margin-bottom:6px}
+.lic-form{display:grid;gap:10px}
+.lic-form[hidden]{display:none}
+.lic-form input{text-align:center;font-family:ui-monospace,Menlo,monospace}
+.lic-form .btn,.lic-box>.btn{width:100%}
+.lic-note{color:var(--muted);font-size:.8rem;margin:0}
+.lic-ok{display:inline-grid;place-items:center;width:54px;height:54px;margin-top:14px;border-radius:50%;background:#e9a98f29;color:var(--gold2);font-size:28px;font-weight:900}

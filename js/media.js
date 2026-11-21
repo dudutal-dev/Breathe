@@ -1,4 +1,4 @@
-/* מדיה מקומית: תמונות, סרטונים, תמונות פרופיל והקלטות קול – ב-IndexedDB במכשיר בלבד. */
+/* מדיה: תמונות, סרטונים, תמונות פרופיל והקלטות קול – ב-IndexedDB במכשיר. בגרסת משתמש הקצה המדיה של המשימות יורדת מהשרת ונשמרת כאן. */
 const Media = (() => {
   const DB = 'breathe-media', VER = 1;
   let dbp = null;
@@ -67,18 +67,45 @@ const Media = (() => {
     return { kind, size: blob.size };
   }
   async function saveAvatar(key, file) { const blob = await squareAvatar(file); await put('files', key, { blob, type: 'image/jpeg', kind: 'image', size: blob.size, added: Date.now() }); return blob.size; }
-  const getFile = (key) => get('files', key).catch(() => null);
+  const getLocal = (key) => get('files', key).catch(() => null);
+  // גרסת משתמש הקצה: המדיה מגיעה מהשרת (לפי מה שבעל המוצר פרסם) ונשמרת במכשיר תחת r:<מפתח>, כדי שתעבוד גם בלי רשת.
+  // קובץ שפורסם מחדש (added שונה) יורד שוב. במצב הזה לא מוצגים קבצים מקומיים.
+  let remote = null; const inflight = new Map();
+  function setRemote(r) {   // { files: { key: { type, kind, size, added } }, url: (key, f) => string }  או null
+    remote = r;
+    if (r) keys('files').then((ks) => ks.filter((k) => String(k).startsWith('r:') && !r.files[String(k).slice(2)]).forEach((k) => del('files', k).catch(() => {}))).catch(() => {});
+  }
+  async function getRemote(key) {
+    const f = remote.files[key]; if (!f) return null;
+    const hit = await get('files', 'r:' + key).catch(() => null);
+    if (hit && hit.blob && hit.added === f.added) return hit;
+    if (inflight.has(key)) return inflight.get(key);
+    const job = (async () => {
+      try {
+        const res = await fetch(remote.url(key, f)); if (!res.ok) return (hit && hit.blob) ? hit : null;
+        const blob = await res.blob(), rec = { blob, type: f.type || blob.type, kind: f.kind === 'video' ? 'video' : 'image', size: blob.size, added: f.added };
+        put('files', 'r:' + key, rec).catch(() => {});
+        return rec;
+      } catch { return (hit && hit.blob) ? hit : null; }   // אין רשת: הגרסה הקודמת, אם יש
+      finally { inflight.delete(key); }
+    })();
+    inflight.set(key, job); return job;
+  }
+  const getFile = (key) => (remote && !String(key).startsWith('avatar_') ? getRemote(key) : getLocal(key));
+  // הורדה מראש ברקע, אחד אחד (למשימות הערב), כדי שהסרטון יהיה מוכן כשמגיעים לכרטיס
+  let preQ = Promise.resolve();
+  function prefetch(list) { if (!remote) return; list.forEach((k) => { preQ = preQ.then(() => getRemote(k)).catch(() => {}); }); }
   const removeFile = (key) => del('files', key).catch(() => {});
   async function usage() {
-    try { const ks = await keys('files'); let total = 0; for (const k of ks) { const v = await get('files', k); total += (v && v.size) || 0; } return { count: ks.length, bytes: total }; }
+    try { const ks = (await keys('files')).filter((k) => !String(k).startsWith('r:')); let total = 0; for (const k of ks) { const v = await get('files', k); total += (v && v.size) || 0; } return { count: ks.length, bytes: total }; }
     catch { return { count: 0, bytes: 0 }; }
   }
-  const allKeys = () => keys('files').catch(() => []);
+  const allKeys = () => keys('files').then((ks) => ks.filter((k) => !String(k).startsWith('r:'))).catch(() => []);
   const putRecord = (key, rec) => put('files', key, rec);
   const putAudio = (key, blob) => put('audio', key, blob).catch(() => {});
   const getAudio = (key) => get('audio', key).catch(() => null);
   async function clearAll() { try { await clear('files'); await clear('audio'); } catch { /* אין */ } }
   async function clearAudio() { try { await clear('audio'); } catch { /* אין */ } }
   const fmtBytes = (b) => b > 1e9 ? (b / 1e9).toFixed(2) + ' GB' : b > 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.round(b / 1e3) + ' KB';
-  return { saveFile, saveAvatar, getFile, removeFile, usage, putAudio, getAudio, clearAll, clearAudio, fmtBytes, allKeys, putRecord };
+  return { setRemote, prefetch, getLocal, saveFile, saveAvatar, getFile, removeFile, usage, putAudio, getAudio, clearAll, clearAudio, fmtBytes, allKeys, putRecord };
 })();

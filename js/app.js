@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.19.57';
+  const APP_VERSION = '2026.10.19.58';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -33,7 +33,21 @@
       return Object.assign(DEFAULT(), j);
     } catch { return DEFAULT(); }
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* מלא */ } }
+  // גרסת משתמש הקצה (קישור הפעלה, js/lic.js): המדיה והמשימות שבעל המוצר פרסם מגיעות מהשרת ומוצגות במקום המדיה המקומית.
+  // מה שנשמר במכשיר (media, en) לא נדרס: נשמר בצד, ונכתב חזרה כמו שהוא.
+  const PLAYER = typeof Lic !== 'undefined' && Lic.PLAYER;
+  const localMedia = S.media, localEn = S.en || {};
+  let REMOTE = { custom: [], customIllus: {} };
+  function applyRemote(man) {
+    if (!PLAYER) return;
+    const files = (man && man.files) || {}, deck = (man && man.deck) || {}, map = {};
+    Object.entries(files).forEach(([k, f]) => { const i = k.lastIndexOf(':'), id = k.slice(0, i), slot = k.slice(i + 1); (map[id] = map[id] || {})[slot] = { size: f.size }; });
+    S.media = map; S.en = Object.assign({}, deck.en || {}, localEn);
+    REMOTE = { custom: (Array.isArray(deck.custom) ? deck.custom : []).filter((c) => c && typeof c.id === 'string' && typeof c.text === 'string'), customIllus: deck.customIllus || {} };
+    Media.setRemote({ files, url: Lic.mediaUrl });
+  }
+  applyRemote(PLAYER ? Lic.remote() : null);
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(PLAYER ? Object.assign({}, S, { media: localMedia, en: localEn }) : S)); } catch { /* מלא */ } }
 
   // ---------- שפה: עברית (ברירת מחדל) או אנגלית ----------
   // הממשק מתורגם ברמת ה-DOM: כל צומת טקסט בעברית מוחלף לפי המילון ב-js/i18n.js (התאמה מדויקת, ואז דפוסים).
@@ -142,7 +156,8 @@
     ? `<b>${roleName('D')}</b>: ${esc(t(r.action.t))} <b>${esc(t(r.body.t))}</b> of ${roleName('S')}, ${esc(t(r.time.t))}.`
     : `<b>${roleName('D')}</b>: ${esc(r.action.t)} <b>${esc(r.body.t)}</b> של ${roleName('S')}, ${esc(r.time.t)}.`;
   const catOf = (id) => CATEGORIES.find((c) => c.id === id);
-  const allCards = () => CARDS.concat(S.custom);
+  const allCards = () => CARDS.concat(REMOTE.custom.filter((c) => !S.custom.some((x) => x.id === c.id)), S.custom);
+  const isOwn = (c) => c.id.startsWith('u_') && S.custom.some((x) => x.id === c.id);   // כרטיס שנוסף במכשיר הזה (ולא הגיע מבעל המוצר)
   const cardById = (id) => allCards().find((c) => c.id === id);
 
   // ---------- גבולות ----------
@@ -175,6 +190,7 @@
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { /* */ }
   }
   function show(name) {
+    if (PLAYER && (name === 'list' || name === 'ai')) name = 'more';   // כלי היצירה לא קיימים בגרסת משתמש הקצה
     const prev = current; current = name;
     if (prev === 'play' && name !== 'play') stopCardMedia(); // מסך מוסתר לא עוצר וידאו לבד
     SCREENS.forEach((s) => { $('#scr-' + s).hidden = s !== name; });
@@ -696,7 +712,15 @@
   $('#btn-home-tv').addEventListener('click', enterTv);
   $('#btn-home-music').addEventListener('click', () => { if (!(window.Music && Music.toggleEvening())) show('music'); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && peek) closePeek(); });
+  // גרסת משתמש הקצה: מורידים ברקע את המדיה של המשימות שנשארו בערב, כדי שתהיה מוכנה כשמגיעים לכרטיס
+  function prefetchEvening() {
+    const ses = S.session; if (!PLAYER || !ses || SAFE_MODE) return;
+    const list = [];
+    ses.cards.slice(ses.idx).forEach((id) => { const m = S.media[id]; if (!m) return; const ty = activeVidType(m); (ty ? VID_TYPES[ty] : IMG_SLOTS).filter((k) => m[k]).forEach((k) => list.push(mediaKey(id, k))); });
+    Media.prefetch(list);
+  }
   function renderHome() {
+    prefetchEvening();
     const c = ctx();
     const modeTxt = { fixed: '', alternate: ' · מתחלף כל משימה', random: ' · הגרלה בכל ערב' }[S.roleMode] || '';
     $('#home-sub').textContent = `מילת העצירה: ${S.safeword}${modeTxt}`;
@@ -984,11 +1008,60 @@
     $('#opt-awake').checked = S.keepAwake; $('#opt-sound').checked = !S.videoMuted; $('#opt-maybe').checked = S.includeMaybe; $('#opt-safety').checked = !!S.showSafety;
     $('#pin-label').textContent = S.pinHash ? 'קוד נעילה: פעיל' : 'קוד נעילה: כבוי';
     $('#tts-label').textContent = 'הקראת כרטיסים: ' + (S.tts.mode === 'off' ? 'כבויה' : S.tts.mode === 'browser' ? 'קול הדפדפן' : 'ElevenLabs');
+    $('#lic-label').textContent = Lic.status() || 'קישור הפעלה: הדבקת קישור או קוד';
+    $('#more-note').textContent = Lic.valid() ? 'ההגדרות, הגבולות והמשימות שלכם נשמרים במכשיר הזה בלבד. קישור ההפעלה נבדק מול השרת בפתיחת האפליקציה.' : 'הכול נשמר במכשיר הזה בלבד. שום דבר לא נשלח לשום מקום.';
     Media.usage().then((u) => { $('#media-usage').textContent = `תמונות וסרטונים שלכם: ${u.count} קבצים, ${Media.fmtBytes(u.bytes)}`; });
   }
   $('#btn-media-usage').addEventListener('click', () => dialog('<h2>תמונות וסרטונים</h2><p>הקבצים נשמרים רק במכשיר הזה (IndexedDB). מחיקת האפליקציה או ניקוי נתוני האתר מוחקים אותם. ״גיבוי מלא לקובץ״ שומר את כולם לקובץ אחד.</p>', [
     { label: 'מחיקת כל התמונות והסרטונים', cls: 'danger', onClick: () => { Media.clearAll().then(() => { S.media = {}; S.avatars = { a: false, b: false }; save(); renderMore(); }); } },
     { label: 'סגירה' }]));
+
+  // ---------- קישור הפעלה ----------
+  $('#btn-lic').addEventListener('click', () => dialog(`<h2>קישור הפעלה</h2><p>${Lic.status() ? esc(Lic.status()) + '.' : 'אין קישור הפעלה במכשיר הזה.'}</p><p class="muted tiny">קיבלתם קישור או קוד חדש? הדביקו אותו כאן. כל קישור עובד על טלפון אחד.</p><div class="form"><label>קישור או קוד<input id="lic-in" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="P.xxxxxxxx.xxxx"></label></div><p class="muted tiny" id="lic-err"></p>`, [
+    { label: 'הפעלה', cls: 'primary', onClick: (card) => { const tok = Lic.findToken($('#lic-in', card).value), err = $('#lic-err', card); if (!tok) { err.textContent = 'הקישור לא תקין. כדאי להעתיק אותו שוב במלואו.'; return true; } err.textContent = 'בודק…'; Lic.activate(tok).then((ok) => { if (ok) $('#dlg').hidden = true; else err.textContent = 'ההפעלה לא הצליחה. בדקו את הקישור ואת החיבור לרשת.'; }); return true; } },
+    { label: 'סגירה' }]));
+
+  // ---------- פרסום המדיה למשתמשי הקצה (בעל המוצר, בסיסמת הניהול של קישורי ההפעלה) ----------
+  // מתפרסמים רק התמונות והסרטונים של המשימות והמשימות שהוספתם. תמונות הפרופיל, השמות, הגבולות וההגדרות נשארים במכשיר.
+  const publishKeys = () => Object.entries(S.media || {}).flatMap(([id, m]) => Object.keys(m || {}).filter((k) => isImgSlot(k) || ALL_VID_SLOTS.includes(k)).map((k) => mediaKey(id, k)));
+  function publishDialog() {
+    const n = publishKeys().length;
+    dialog(`<h2>פרסום המדיה</h2><p>${n} תמונות וסרטונים של משימות יועלו לאחסון הפרטי שלכם, ויוצגו רק למי שקיבל מכם קישור הפעלה. כך המשתמשים מקבלים אפליקציה מוכנה, בלי פרומפטים והעלאות.</p><p class="muted tiny">מתפרסמים גם המשימות שהוספתם. תמונות הפרופיל, השמות, הגבולות וההגדרות שלכם לא מתפרסמים. קובץ שהוסר אצלכם יוסר גם מהשרת.</p><div class="form"><label>סיסמת הניהול<input id="pub-pw" type="password" autocomplete="current-password" dir="ltr"></label></div>`, [
+      { label: 'פרסום', cls: 'primary', onClick: (card) => { runPublish($('#pub-pw', card).value, publishKeys()); return true; } },
+      { label: 'הסרת כל המדיה מהשרת', cls: 'danger', onClick: (card) => { const pw = $('#pub-pw', card).value; dialog('<h2>להסיר את כל המדיה מהשרת?</h2><p>המשתמשים יראו איורים במקום תמונות וסרטונים. הקבצים שבמכשיר שלכם לא נמחקים.</p>', [{ label: 'כן, להסיר', cls: 'danger', onClick: () => { runPublish(pw, [], true); return true; } }, { label: 'ביטול' }]); return true; } },
+      { label: 'סגירה' }]);
+  }
+  async function runPublish(pw, keys, clearing) {
+    dialog('<h2>מפרסם…</h2><p class="muted" id="pub-prog">מתחבר לשרת</p><p class="muted tiny">השאירו את האפליקציה פתוחה עד הסיום. בפעם הראשונה זה יכול לקחת כמה דקות.</p>', []);
+    const prog = (txt) => { const el = $('#pub-prog'); if (el) el.textContent = txt; };
+    try {
+      requestWake();
+      if (!(await Lic.login(pw))) return dialog('<h2>הסיסמה לא נכונה</h2><p>זו הסיסמה של מסך הניהול של קישורי ההפעלה.</p>', [{ label: 'ניסיון נוסף', cls: 'primary', onClick: () => { publishDialog(); return true; } }, { label: 'סגירה' }]);
+      const srv = ((await Lic.serverList()) || {}).files || {}, files = {}, skipped = [];
+      let up = 0, i = 0;
+      for (const key of keys) {
+        i++; prog(`בודק קובץ ${i} מתוך ${keys.length}`);
+        const rec = await Media.getLocal(key); if (!rec || !rec.blob) continue;
+        const meta = { type: rec.type || rec.blob.type || '', kind: rec.kind === 'video' ? 'video' : 'image', size: rec.blob.size, added: rec.added || 1 };
+        const have = srv[key];
+        if (!(have && have.size === meta.size && have.added === meta.added)) {
+          if (meta.size > Lic.MAX_UPLOAD) { skipped.push(key); continue; }
+          prog(`מעלה קובץ ${i} מתוך ${keys.length} (${Media.fmtBytes(meta.size)})`);
+          await Lic.upload(key, rec.blob, meta.type); up++;
+        }
+        files[key] = meta;
+      }
+      prog('מעדכן את הרשימה בשרת');
+      const own = new Set(S.custom.map((c) => c.id));
+      const en = Object.fromEntries(Object.entries(S.en || {}).filter(([k]) => own.has(k.slice(0, k.lastIndexOf(':')))));
+      const r = await Lic.publish(files, clearing ? {} : { custom: S.custom, en, customIllus: S.customIllus || {} });
+      const skipTxt = skipped.length ? `<p>${skipped.length} קבצים לא הועלו כי הם גדולים מ-99MB: ${skipped.map((k) => esc(k)).join(', ')}. קצרו אותם ופרסמו שוב.</p>` : '';
+      dialog(clearing ? '<h2>המדיה הוסרה מהשרת</h2>' : `<h2>פורסם</h2><p>${r.count} קבצים זמינים עכשיו למשתמשים עם קישור הפעלה. ${up} הועלו עכשיו${r.removed ? `, ו-${r.removed} הוסרו מהשרת` : ''}.</p>${skipTxt}<p class="muted tiny">המשתמשים יקבלו את העדכון בפתיחה הבאה של האפליקציה.</p>`, [{ label: 'סגירה' }]);
+    } catch (e) {
+      dialog(`<h2>הפרסום לא הושלם</h2><p>${e && e.message === 'auth' ? 'הכניסה פגה. נסו שוב.' : 'בדקו את החיבור לרשת ונסו שוב. קבצים שכבר הועלו לא יועלו פעם נוספת.'}</p>`, [{ label: 'ניסיון נוסף', cls: 'primary', onClick: () => { publishDialog(); return true; } }, { label: 'סגירה' }]);
+    }
+  }
+  $('#btn-publish').addEventListener('click', publishDialog);
 
   // ---------- גיבוי ושחזור ----------
   const APP_ID = 'breathe';
@@ -1048,19 +1121,19 @@
     let list = allCards();
     if (edFilter === 'fav') list = list.filter((c) => S.favorites.includes(c.id));
     else if (edFilter === 'hidden') list = list.filter((c) => S.hidden.includes(c.id));
-    else if (edFilter === 'custom') list = list.filter((c) => c.id.startsWith('u_'));
+    else if (edFilter === 'custom') list = list.filter(isOwn);
     else if (edFilter === 'media') list = list.filter((c) => hasMedia(c.id));
     const groups = CATEGORIES.concat([{ id: AFTERCARE_ID, name: 'סגירה', img: 'moon' }]).map((cat) => ({ cat, cards: list.filter((c) => c.cat === cat.id) })).filter((g) => g.cards.length);
     const row = (c, cat) => {
       const hid = S.hidden.includes(c.id), fav = S.favorites.includes(c.id), m = S.media[c.id] || {};
       return `<div class="ed-row ${hid ? 'hid' : ''}" data-id="${c.id}">
         <div class="ed-art">${illus(c.img || cat.img)}</div>
-        <div class="ed-main"><small>עומק ${c.lvl || 'סגירה'} · ${c.to === 'B' ? 'שניכם' : c.to === 'D' ? 'נותן/ת' : 'מקבל/ת'}${c.id.startsWith('u_') ? ' · שלנו' : ''}</small><p>${cardText(c)}</p>
-          <div class="ed-media"><small class="muted">${hasMedia(c.id) ? '🖼🎬 יש מדיה · ' : ''}העלאת תמונות וסרטונים: ב״להעתקה ופרומפטים״</small></div></div>
+        <div class="ed-main"><small>עומק ${c.lvl || 'סגירה'} · ${c.to === 'B' ? 'שניכם' : c.to === 'D' ? 'נותן/ת' : 'מקבל/ת'}${isOwn(c) ? ' · שלנו' : ''}</small><p>${cardText(c)}</p>
+          <div class="ed-media"><small class="muted">${PLAYER ? (hasMedia(c.id) ? '🖼🎬 יש מדיה' : '') : (hasMedia(c.id) ? '🖼🎬 יש מדיה · ' : '') + 'העלאת תמונות וסרטונים: ב״להעתקה ופרומפטים״'}</small></div></div>
         <div class="ed-btns">
           <button class="icon ${fav ? 'on' : ''}" data-act="fav" title="מועדף">${fav ? '★' : '☆'}</button>
           <button class="icon" data-act="hide" title="${hid ? 'החזרה' : 'הסתרה'}">${hid ? '↩' : '🚫'}</button>
-          ${c.id.startsWith('u_') ? `<button class="icon" data-act="edit" title="עריכה">✎</button><button class="icon" data-act="del" title="מחיקה">🗑</button>` : ''}
+          ${isOwn(c) ? `<button class="icon" data-act="edit" title="עריכה">✎</button><button class="icon" data-act="del" title="מחיקה">🗑</button>` : ''}
         </div></div>`;
     };
     $('#editor-list').innerHTML = groups.map(({ cat, cards }) => {
@@ -1885,6 +1958,12 @@ END: ${bt.end}` : ''}`
     if (window.Music) Music.init();
     $('#sprite').innerHTML = illustrationSprite();
     Object.entries(S.customIllus || {}).forEach(([id, body]) => addCustomIllustration(id, body));
+    Object.entries(REMOTE.customIllus).forEach(([id, body]) => { if (!(S.customIllus || {})[id]) addCustomIllustration(id, body); });
+    // קישור הפעלה: בדיקה מול השרת ברקע. עדכון של המדיה שפורסמה נכנס מיד, ומרענן את מסך הבית.
+    if (!isReceiver) {
+      Lic.onRemote((man) => { applyRemote(man); Object.entries(REMOTE.customIllus).forEach(([id, body]) => { if (!(S.customIllus || {})[id]) addCustomIllustration(id, body); }); if (current === 'home' || current === 'editor') show(current); });
+      Lic.init();
+    }
     buildPad();
     if (!SAFE_MODE && Object.values(S.media).some((m) => m && (m.kind || m.vid))) { try { await Promise.race([migrateMedia(), delay(8000)]); } catch (e) { console.warn('migrateMedia', e); } }
     $('#app-version').textContent = 'גרסה ' + APP_VERSION;
