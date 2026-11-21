@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.19.58';
+  const APP_VERSION = '2026.10.19.59';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -286,7 +286,7 @@
   // ---------- מחיקה ----------
   function confirmWipe() {
     dialog('<h2>למחוק הכול?</h2><p>שמות, גבולות, כרטיסים שהוספתם, מועדפים וקוד הנעילה יימחקו מהמכשיר. אין דרך חזרה.</p>', [
-      { label: 'כן, מחק הכול', cls: 'danger', onClick: () => { localStorage.removeItem(KEY); S = DEFAULT(); Media.clearAll().finally(() => location.reload()); } },
+      { label: 'כן, מחק הכול', cls: 'danger', onClick: () => { localStorage.removeItem(KEY); pubPw.set(''); S = DEFAULT(); Media.clearAll().finally(() => location.reload()); } },
       { label: 'ביטול' },
     ]);
   }
@@ -1024,11 +1024,13 @@
   // ---------- פרסום המדיה למשתמשי הקצה (בעל המוצר, בסיסמת הניהול של קישורי ההפעלה) ----------
   // מתפרסמים רק התמונות והסרטונים של המשימות והמשימות שהוספתם. תמונות הפרופיל, השמות, הגבולות וההגדרות נשארים במכשיר.
   const publishKeys = () => Object.entries(S.media || {}).flatMap(([id, m]) => Object.keys(m || {}).filter((k) => isImgSlot(k) || ALL_VID_SLOTS.includes(k)).map((k) => mediaKey(id, k)));
+  // ״זכור את הסיסמה״: נשמרת רק במכשיר הזה, מחוץ להגדרות (כך שהיא לא נכנסת לגיבוי), ונמחקת אם התבררה כשגויה
+  const pubPw = { get: () => { try { return localStorage.getItem('breathe.pubPw') || ''; } catch { return ''; } }, set: (v) => { try { v ? localStorage.setItem('breathe.pubPw', v) : localStorage.removeItem('breathe.pubPw'); } catch { /* */ } } };
   function publishDialog() {
     const n = publishKeys().length;
-    dialog(`<h2>פרסום המדיה</h2><p>${n} תמונות וסרטונים של משימות יועלו לאחסון הפרטי שלכם, ויוצגו רק למי שקיבל מכם קישור הפעלה. כך המשתמשים מקבלים אפליקציה מוכנה, בלי פרומפטים והעלאות.</p><p class="muted tiny">מתפרסמים גם המשימות שהוספתם. תמונות הפרופיל, השמות, הגבולות וההגדרות שלכם לא מתפרסמים. קובץ שהוסר אצלכם יוסר גם מהשרת.</p><div class="form"><label>סיסמת הניהול<input id="pub-pw" type="password" autocomplete="current-password" dir="ltr"></label></div>`, [
-      { label: 'פרסום', cls: 'primary', onClick: (card) => { runPublish($('#pub-pw', card).value, publishKeys()); return true; } },
-      { label: 'הסרת כל המדיה מהשרת', cls: 'danger', onClick: (card) => { const pw = $('#pub-pw', card).value; dialog('<h2>להסיר את כל המדיה מהשרת?</h2><p>המשתמשים יראו איורים במקום תמונות וסרטונים. הקבצים שבמכשיר שלכם לא נמחקים.</p>', [{ label: 'כן, להסיר', cls: 'danger', onClick: () => { runPublish(pw, [], true); return true; } }, { label: 'ביטול' }]); return true; } },
+    dialog(`<h2>פרסום המדיה</h2><p>${n} תמונות וסרטונים של משימות יועלו לאחסון הפרטי שלכם, ויוצגו רק למי שקיבל מכם קישור הפעלה. כך המשתמשים מקבלים אפליקציה מוכנה, בלי פרומפטים והעלאות.</p><p class="muted tiny">מתפרסמים גם המשימות שהוספתם. תמונות הפרופיל, השמות, הגבולות וההגדרות שלכם לא מתפרסמים. קובץ שהוסר אצלכם יוסר גם מהשרת.</p><div class="form"><label>סיסמת הניהול<input id="pub-pw" type="password" autocomplete="current-password" dir="ltr" value="${esc(pubPw.get())}"></label></div><label class="pub-keep"><input type="checkbox" id="pub-keep" ${pubPw.get() ? 'checked' : ''}><span>זכור את הסיסמה במכשיר הזה</span></label>`, [
+      { label: 'פרסום', cls: 'primary', onClick: (card) => { const pw = $('#pub-pw', card).value; pubPw.set($('#pub-keep', card).checked ? pw : ''); runPublish(pw, publishKeys()); return true; } },
+      { label: 'הסרת כל המדיה מהשרת', cls: 'danger', onClick: (card) => { const pw = $('#pub-pw', card).value; pubPw.set($('#pub-keep', card).checked ? pw : ''); dialog('<h2>להסיר את כל המדיה מהשרת?</h2><p>המשתמשים יראו איורים במקום תמונות וסרטונים. הקבצים שבמכשיר שלכם לא נמחקים.</p>', [{ label: 'כן, להסיר', cls: 'danger', onClick: () => { runPublish(pw, [], true); return true; } }, { label: 'ביטול' }]); return true; } },
       { label: 'סגירה' }]);
   }
   async function runPublish(pw, keys, clearing) {
@@ -1036,7 +1038,7 @@
     const prog = (txt) => { const el = $('#pub-prog'); if (el) el.textContent = txt; };
     try {
       requestWake();
-      if (!(await Lic.login(pw))) return dialog('<h2>הסיסמה לא נכונה</h2><p>זו הסיסמה של מסך הניהול של קישורי ההפעלה.</p>', [{ label: 'ניסיון נוסף', cls: 'primary', onClick: () => { publishDialog(); return true; } }, { label: 'סגירה' }]);
+      if (!(await Lic.login(pw))) { pubPw.set(''); return dialog('<h2>הסיסמה לא נכונה</h2><p>זו הסיסמה של מסך הניהול של קישורי ההפעלה.</p>', [{ label: 'ניסיון נוסף', cls: 'primary', onClick: () => { publishDialog(); return true; } }, { label: 'סגירה' }]); }
       const srv = ((await Lic.serverList()) || {}).files || {}, files = {}, skipped = [];
       let up = 0, i = 0;
       for (const key of keys) {

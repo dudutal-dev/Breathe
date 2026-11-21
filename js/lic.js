@@ -184,7 +184,7 @@ if (typeof I18N !== 'undefined') {
     'ההגדרות, הגבולות והמשימות שלכם נשמרים במכשיר הזה בלבד. קישור ההפעלה נבדק מול השרת בפתיחת האפליקציה.': 'Your settings, limits and tasks are stored on this device only. The activation link is checked with the server when the app opens.',
     'פרסום המדיה למשתמשים עם קישור הפעלה': 'Publish the media to users with an activation link', 'פרסום המדיה': 'Publish the media', 'פרסום': 'Publish',
     'מתפרסמים גם המשימות שהוספתם. תמונות הפרופיל, השמות, הגבולות וההגדרות שלכם לא מתפרסמים. קובץ שהוסר אצלכם יוסר גם מהשרת.': 'Tasks you added are published too. Your profile photos, names, limits and settings are not published. A file you removed is removed from the server as well.',
-    'סיסמת הניהול': 'Admin password', 'הסרת כל המדיה מהשרת': 'Remove all media from the server', 'להסיר את כל המדיה מהשרת?': 'Remove all media from the server?',
+    'סיסמת הניהול': 'Admin password', 'זכור את הסיסמה במכשיר הזה': 'Remember the password on this device', 'הסרת כל המדיה מהשרת': 'Remove all media from the server', 'להסיר את כל המדיה מהשרת?': 'Remove all media from the server?',
     'המשתמשים יראו איורים במקום תמונות וסרטונים. הקבצים שבמכשיר שלכם לא נמחקים.': 'Users will see illustrations instead of photos and videos. The files on your device are not deleted.',
     'כן, להסיר': 'Yes, remove', 'מפרסם…': 'Publishing…', 'מתחבר לשרת': 'Connecting to the server', 'מעדכן את הרשימה בשרת': 'Updating the list on the server',
     'השאירו את האפליקציה פתוחה עד הסיום. בפעם הראשונה זה יכול לקחת כמה דקות.': 'Keep the app open until it finishes. The first time can take a few minutes.',

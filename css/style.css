@@ -634,3 +634,4 @@ html.locked body{overflow:hidden}
 .lic-form .btn,.lic-box>.btn{width:100%}
 .lic-note{color:var(--muted);font-size:.8rem;margin:0}
 .lic-ok{display:inline-grid;place-items:center;width:54px;height:54px;margin-top:14px;border-radius:50%;background:#e9a98f29;color:var(--gold2);font-size:28px;font-weight:900}
+.pub-keep{display:flex;align-items:center;gap:10px;margin:10px 0 0;color:var(--muted);font-size:.92rem}
