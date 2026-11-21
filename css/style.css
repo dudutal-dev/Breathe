@@ -668,3 +668,25 @@ body.music-on #play-actions > .btn.primary.big:first-child{bottom:calc(164px + v
 /* ״עוד״ בקבוצות */
 .menu-h{margin:18px 4px 2px;font-size:.82rem;font-family:var(--sans);font-weight:600;letter-spacing:.08em;color:var(--gold);text-shadow:none}
 .menu-h:first-child{margin-top:4px}
+
+/* ── רקע אמנותי (63): קטיפה עמוקה שנעה לאט, מנדלה בקו זהב שמסתובבת ונושמת, וגרעין עדין ── */
+html{background:#120811}
+body{background:transparent}
+html::before{content:"";position:fixed;inset:-20%;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(38% 30% at 22% 18%,#7a2a55 0%,transparent 70%),
+    radial-gradient(42% 34% at 82% 30%,#4b2470 0%,transparent 72%),
+    radial-gradient(46% 34% at 70% 86%,#8a4426 0%,transparent 70%),
+    radial-gradient(40% 32% at 14% 78%,#5e1f3c 0%,transparent 72%),
+    linear-gradient(180deg,#1b0c1a,#120811);
+  animation:bg-drift 46s ease-in-out infinite alternate;will-change:transform}
+@keyframes bg-drift{0%{transform:translate3d(-3%,-2%,0) scale(1)}50%{transform:translate3d(3%,2%,0) scale(1.08)}100%{transform:translate3d(-2%,4%,0) scale(1.03)}}
+html::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::before{display:block;content:"";position:fixed;z-index:0;pointer-events:none;left:50%;top:210px;width:min(980px,230vw);aspect-ratio:1;margin:calc(min(980px,230vw) / -2) 0 0 calc(min(980px,230vw) / -2);
+  background:url(../img/mandala.svg) center/contain no-repeat;opacity:.13;
+  -webkit-mask-image:radial-gradient(closest-side,#000 35%,transparent 96%);mask-image:radial-gradient(closest-side,#000 35%,transparent 96%);
+  animation:mandala 240s linear infinite,mandala-breathe 11s ease-in-out infinite alternate;will-change:transform}
+@keyframes mandala{to{rotate:360deg}}
+@keyframes mandala-breathe{from{scale:.97;opacity:.10}to{scale:1.04;opacity:.16}}
+@media (prefers-reduced-motion:reduce){html::before,body::before{animation:none}}

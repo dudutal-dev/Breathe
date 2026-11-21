@@ -1,10 +1,10 @@
 // Service worker – רשת קודם כשיש רשת (כדי שגרסה חדשה תיכנס לבד), מטמון כשאין.
-const CACHE = 'breathe-v62';
+const CACHE = 'breathe-v63';
 const ASSETS = [
   './', './index.html', './css/style.css',
   './js/app.js', './js/music.js', './js/teaser-audio.js', './js/evening-video.js', './js/cards-data.js', './js/cards-en.js',
   './js/i18n.js', './js/lic.js', './js/illustrations.js', './js/media.js', './js/backup.js',
-  './manifest.webmanifest', './version.json',
+  './manifest.webmanifest', './version.json', './img/mandala.svg',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'
 ];
 self.addEventListener('install', (e) => {
