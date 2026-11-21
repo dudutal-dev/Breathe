@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'breathe.v1';
-  const APP_VERSION = '2026.10.19.61';
+  const APP_VERSION = '2026.10.19.62';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -727,11 +727,6 @@
     $('#home-roles').innerHTML = `<div class="role dom">${S.avatars[S.dom] ? avatarHtml(S.dom, 'lg') : illus('sun')}<small>${c.dg === 'm' ? 'נותן' : 'נותנת'}</small><b>${c.D}</b></div>
       <div class="role sub">${S.avatars[sub()] ? avatarHtml(sub(), 'lg') : illus('moon')}<small>${c.sg === 'm' ? 'מקבל' : 'מקבלת'}</small><b>${c.S}</b></div>`;
     hydrateAvatars($('#home-roles'));
-    $('#home-mode').innerHTML = `<div class="seg" id="home-mode-seg"><button type="button" data-v="fixed">קבוע כל הערב</button><button type="button" data-v="alternate">מתחלף כל משימה</button><button type="button" data-v="random">הגרלה בכל ערב</button></div>
-      <p class="muted tiny center" id="home-mode-help"></p>`;
-    const help = { fixed: `${c.D} ${c.dg === 'm' ? 'נותן' : 'נותנת'} את כל הערב. ״החלפת תפקידים״ מחליף ידנית.`, alternate: `משימה אחת ${c.D} ${c.dg === 'm' ? 'נותן' : 'נותנת'}, הבאה ${c.S}, וחוזר חלילה. גם בקלף אקראי ובקוביות.`, random: 'בכל ערב חדש האפליקציה מגרילה גם מי נותן וגם אם זה קבוע או מתחלף כל משימה.' + (S.session ? ` הערב: ${c.D} ${c.dg === 'm' ? 'נותן' : 'נותנת'}, ${S.eveningAlt ? 'מתחלף' : 'קבוע'}.` : '') };
-    $('#home-mode-help').textContent = help[S.roleMode] || help.fixed;
-    seg($('#home-mode-seg'), S.roleMode || 'fixed', (v) => { S.roleMode = v; save(); renderHome(); });
     const ses = S.session;
     $('#btn-resume').hidden = !(ses && ses.idx < ses.cards.length);
     { const open = !!(ses && ses.idx < ses.cards.length), nb = $('#btn-new'); nb.classList.toggle('primary', !open); nb.classList.toggle('big', !open); nb.classList.toggle('ghost', open); }   // ערב פתוח: ״המשך ערב״ הוא הכפתור הראשי היחיד
@@ -739,9 +734,23 @@
     const ev = $('#btn-evideo'); ev.hidden = !(ses && ses.idx < ses.cards.length && window.EveningVideo && EveningVideo.supported()); ev.textContent = isEn() ? '🎬 Evening video (English)' : '🎬 ייצוא הערב לווידאו (אנגלית)'; pk.textContent = isEn() ? '👁 Peek at the evening ahead' : '👁 הצצה לערב שמצפה לנו';
     $('#btn-home-tv').textContent = isEn() ? '📺 TV' : '📺 טלוויזיה'; $('#btn-home-music').textContent = musicBtnLabel();
     if (ses) $('#btn-resume').textContent = `המשך ערב (${Math.min(ses.idx + 1, ses.cards.length)}/${ses.cards.length})`;
-    const n = pool().length;
-    $('#home-allowed').innerHTML = `<div class="chips">${CATEGORIES.filter((k) => catAllowed(k.id)).map((k) => `<span class="chip">${k.name}</span>`).join('') || '<span class="chip off">אין קטגוריות מותרות</span>'}</div>
-      <p class="muted tiny">${n} משימות זמינות · עוצמה עד ${maxLevel()}</p>`;
+  }
+  // ״לפני שמתחילים״: מי נותן, קבוע או מתחלף, ומה מותר הערב. נפתח מ״התחל ערב חדש״, כדי שמסך הבית יישאר עם פעולה אחת.
+  function prestart(go) {
+    const c = ctx(), n = pool().length, open = S.session && S.session.idx < S.session.cards.length;
+    const help = { fixed: `${c.D} ${c.dg === 'm' ? 'נותן' : 'נותנת'} את כל הערב. ״החלפת תפקידים״ מחליף ידנית.`, alternate: `משימה אחת ${c.D} ${c.dg === 'm' ? 'נותן' : 'נותנת'}, הבאה ${c.S}, וחוזר חלילה. גם בקלף אקראי ובקוביות.`, random: 'בכל ערב חדש האפליקציה מגרילה גם מי נותן וגם אם זה קבוע או מתחלף כל משימה.' + (S.session ? ` הערב: ${c.D} ${c.dg === 'm' ? 'נותן' : 'נותנת'}, ${S.eveningAlt ? 'מתחלף' : 'קבוע'}.` : '') };
+    dialog(`<h2>לפני שמתחילים</h2>
+      <div class="pre-roles"><span>${illus('sun')}<b>${c.D}</b> ${c.dg === 'm' ? 'נותן' : 'נותנת'}</span><span>${illus('moon')}<b>${c.S}</b> ${c.sg === 'm' ? 'מקבל' : 'מקבלת'}</span><button type="button" class="btn ghost small" id="pre-swap">⇄ החלפה</button></div>
+      <div class="seg" id="pre-mode"><button type="button" data-v="fixed">קבוע כל הערב</button><button type="button" data-v="alternate">מתחלף כל משימה</button><button type="button" data-v="random">הגרלה בכל ערב</button></div>
+      <p class="muted tiny center">${help[S.roleMode] || help.fixed}</p>
+      <div class="chips pre-chips">${CATEGORIES.filter((k) => catAllowed(k.id)).map((k) => `<span class="chip">${k.name}</span>`).join('') || '<span class="chip off">אין קטגוריות מותרות</span>'}</div>
+      <p class="muted tiny center">${n} משימות זמינות · עוצמה עד ${maxLevel()}</p>
+      ${open ? '<p class="muted tiny center">הערב הנוכחי יימחק ותיבנה חפיסה חדשה.</p>' : ''}`, [
+      { label: 'מתחילים', cls: 'primary', onClick: () => go() },
+      { label: 'שינוי הגבולות', onClick: () => { show('limits'); } },
+      { label: 'ביטול' }]);
+    seg($('#pre-mode'), S.roleMode || 'fixed', (v) => { S.roleMode = v; save(); renderHome(); prestart(go); });
+    $('#pre-swap').addEventListener('click', () => { S.dom = sub(); save(); renderHome(); prestart(go); });
   }
   $('#btn-swap').addEventListener('click', () => { S.dom = sub(); save(); renderHome(); if (S.session) { /* הכרטיסים מתרנדרים מחדש בעת הצגה */ } });
   $('#btn-new').addEventListener('click', () => {
@@ -756,8 +765,7 @@
       }
       buildSession(); setTimeout(afterBuild, 60);
     };
-    if (S.session && S.session.idx < S.session.cards.length) dialog('<h2>ערב חדש?</h2><p>הערב הנוכחי יימחק ותיבנה חפיסה חדשה.</p>', [{ label: 'כן, ערב חדש', cls: 'primary', onClick: () => go() }, { label: 'ביטול' }]);
-    else go();
+    prestart(go);
   });
   $('#btn-resume').addEventListener('click', () => startPlay('session'));
 
@@ -812,17 +820,23 @@
     const s = S.session; if (!s) return null;
     return cardById(s.cards[s.idx]) || null;
   }
+  // במסך המשימה: המשפט הראשון (מה עושים) בולט, וההמשך בגוון שקט יותר – קוראים את זה באור עמום
+  function leadSplit(html) {
+    const m = /^([\s\S]*?[.!?](?:״|"|”)?)(\s+)(\S[\s\S]*)$/.exec(html);
+    if (!m || m[1].length < 12 || /<[^>]*$/.test(m[1])) return html;
+    return `<span class="t-lead">${m[1]}</span> <span class="t-rest">${m[3]}</span>`;
+  }
   function cardHtml(c, big = true) {
     const cat = c.cat === AFTERCARE_ID ? { name: 'סגירה', img: 'moon' } : catOf(c.cat);
     const to = c.to === 'B' ? 'לשניכם' : (isEn() ? 'For ' : 'ל') + roleName(c.to);
     const dots = c.lvl ? '<span class="lvl">' + [1, 2, 3].map((i) => `<i class="${i <= c.lvl ? 'on' : ''}"></i>`).join('') + '</span>' : '';
     const who = c.to === 'B' ? null : (c.to === 'D' ? S.dom : sub());
     const av = who && S.avatars[who] ? avatarHtml(who, 'sm') : '';
-    const art = mediaArtHtml(c, 'art') || `<div class="art">${illus(c.img || cat.img)}</div>`;
-    return `<article class="card cat-${c.cat} ${big ? 'big' : ''}">
+    const mArt = mediaArtHtml(c, 'art'), art = mArt || `<div class="art">${illus(c.img || cat.img)}</div>`;
+    return `<article class="card cat-${c.cat} ${big ? 'big' : ''} ${mArt ? 'has-media' : ''}">
       <header><span class="chip to">${av}${esc(to)}</span><span class="chip cat">${cat.name}</span>${dots}</header>
       ${art}${big ? vidToggleHtml(S.media[c.id] || {}) : ''}
-      <p class="text">${cardText(c)}</p>
+      <p class="text">${big ? leadSplit(cardText(c)) : cardText(c)}</p>
       ${c.safe && S.showSafety ? `<p class="safe">⚠ ${esc(c.safe)}</p>` : ''}
       ${c.min ? `<button class="btn timer-btn" data-min="${c.min}">${illus('stopwatch')} ${c.min} דקות</button>` : ''}
       <div class="card-timer" hidden><span class="t"></span><button class="btn small ghost stop-t">עצירת טיימר</button></div>
@@ -1250,11 +1264,20 @@
       const rec = await Media.getFile(el.dataset.media);
       if (!rec || !rec.blob) { el.innerHTML = illus(PLAYER && el.dataset.ill ? el.dataset.ill : 'camera'); continue; }   // גרסת משתמש הקצה בלי רשת: האיור של המשימה, לא סמל ״הוסיפו תמונה״
       const u = URL.createObjectURL(rec.blob); liveUrls.push(u);
+      const bare = root.id === 'card-host', box = el.parentElement;   // מסך המשימה: המדיה ממלאת את הכרטיס, בלי פקדי הדפדפן
+      const fit = (w, h) => { if (bare && box && w && h) box.style.aspectRatio = String(Math.max(0.8, Math.min(2, w / h))); };
       if (rec.kind === 'video') {
-        el.innerHTML = `<video src="${u}" playsinline controls loop autoplay preload="metadata"></video><button type="button" class="vid-expand" title="הגדלה">⛶</button>`;
-        $('.vid-expand', el).addEventListener('click', (ev) => { ev.stopPropagation(); videoFullscreen($('video', el), u); });
-        playWithSound($('video', el), el);
-      } else { el.innerHTML = `<img src="${u}" alt="">`; $('img', el).addEventListener('click', () => { if (root.id === 'tv-stage') return; const lb = $('#lightbox'); lb.innerHTML = `<img src="${u}" alt="">`; lb.hidden = false; }); }
+        el.innerHTML = `<video src="${u}" playsinline ${bare ? '' : 'controls'} loop autoplay preload="metadata"></video><button type="button" class="vid-expand" title="הגדלה">⛶</button>${bare ? '<button type="button" class="vid-mute" title="קול"></button>' : ''}`;
+        const v = $('video', el);
+        $('.vid-expand', el).addEventListener('click', (ev) => { ev.stopPropagation(); videoFullscreen(v, u); });
+        if (bare) {
+          const mb = $('.vid-mute', el), sync = () => { mb.textContent = v.muted ? '🔇' : '🔊'; };
+          v.addEventListener('loadedmetadata', () => fit(v.videoWidth, v.videoHeight)); v.addEventListener('volumechange', sync);
+          v.addEventListener('click', () => { if (v.paused) v.play().catch(() => {}); else v.pause(); el.classList.toggle('paused', v.paused); });
+          mb.addEventListener('click', (ev) => { ev.stopPropagation(); v.muted = !v.muted; if (!v.muted) { v.volume = 1; v.play().catch(() => {}); el.classList.remove('paused'); } const vs = $('.vid-sound', el); if (vs) vs.remove(); });
+          playWithSound(v, el); sync();
+        } else playWithSound(v, el);
+      } else { el.innerHTML = `<img src="${u}" alt="">`; if (bare) { const im = $('img', el); im.addEventListener('load', () => fit(im.naturalWidth, im.naturalHeight)); } $('img', el).addEventListener('click', () => { if (root.id === 'tv-stage') return; const lb = $('#lightbox'); lb.innerHTML = `<img src="${u}" alt="">`; lb.hidden = false; }); }
     }
   }
   // ניגון עם קול. אם הדפדפן חוסם אוטו-פליי עם קול, מנגנים בשקט ומציגים כפתור ״הפעלת קול״ שלחיצה אחת עליו פותחת את הקול

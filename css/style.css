@@ -5,7 +5,7 @@
   --red:#b7553d; --red2:#d9825a; --red-deep:#7a3a2a;
   --gold:#e9a98f; --gold2:#f7d3bd; --gold-dim:#8f5f4c; --brass:linear-gradient(135deg,#f7d3bd 0%,#e9a98f 45%,#b9705a 100%);
   --amber:#f0b67a; --rose:#c9627a; --plum:#5a2a4a;
-  --text:#f7ece4; --muted:#bf9fae; --ok:#9bc49a;
+  --text:#f7ece4; --muted:#bf9fae; --ok:#f7d3bd;
   --radius:24px; --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
   --serif:"Frank Ruhl Libre","David Libre","Times New Roman",serif;
   --sans:"Heebo","Assistant","Segoe UI",Roboto,Arial,sans-serif;
@@ -64,7 +64,7 @@ code{background:#000a;padding:.05em .35em;border-radius:6px;font-size:.9em;direc
 .seg button{flex:1;padding:9px 6px;border-radius:9px;color:var(--muted);font-weight:600;font-size:.95rem}
 .seg button.on{background:var(--brass);color:#24150a}
 .seg.tri button[data-v=no].on{background:#5a3a4a;color:#fff}
-.seg.tri button[data-v=maybe].on{background:#7f6430;color:#fff}
+.seg.tri button[data-v=maybe].on{background:linear-gradient(135deg,#f0b67a,#c98a52);color:#2a1408}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:inline-block;padding:3px 10px;border-radius:999px;background:#000a;border:1px solid var(--line2);font-size:.82rem;color:var(--muted)}
 .chip.on{border-color:var(--gold);color:var(--gold2)}
@@ -644,3 +644,27 @@ html.locked body{overflow:hidden}
 /* סינוני רשימת המשימות: גובה נוח לאצבע */
 .filters .chip{min-height:40px;padding:0 14px;display:inline-flex;align-items:center;font-size:.9rem}
 body.music-on #play-actions > .btn.primary.big:first-child{bottom:calc(164px + var(--safe-b))}
+
+/* ── עיצוב 62 ── */
+/* כרטיס משימה עם מדיה: התמונה או הסרטון ממלאים את רוחב הכרטיס, מהקצה העליון, בלי פקדי הדפדפן */
+.card.big.has-media{display:flex;flex-direction:column;padding-top:0}
+.card.big.has-media .art.media{order:-1;width:auto;margin:0 -16px 14px;border-radius:0;box-shadow:none;aspect-ratio:16/9;max-height:64vh;background:#000}
+.card.big.has-media .art.media img,.card.big.has-media .art.media video{object-fit:contain}
+.card.big.has-media .art.media::after{content:"";position:absolute;left:0;right:0;bottom:0;height:26px;background:linear-gradient(180deg,transparent,#241427cc);pointer-events:none}
+.card.big.has-media .vid-toggle{align-self:center;margin:0 0 10px}
+.vid-mute{position:absolute;top:8px;inset-inline-end:8px;width:38px;height:38px;border-radius:10px;background:#000a;border:1px solid var(--gold-dim);color:var(--gold2);font-size:1rem;z-index:2}
+#card-host .vid-sound{display:none}
+#card-host [data-media].paused::before{content:"▶";position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:#000a;border:1px solid var(--gold-dim);color:var(--gold2);display:grid;place-items:center;font-size:1.5rem;z-index:2;pointer-events:none}
+/* טקסט המשימה: המשפט הראשון בולט, ההמשך שקט */
+.card .text .t-lead{color:var(--text)}
+.card .text .t-rest{color:#cdb4bf;font-size:.94em}
+.card .text .t-rest b{color:var(--gold)}
+/* ״לפני שמתחילים״ */
+.pre-roles{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin:6px 0 12px;color:var(--muted)}
+.pre-roles span{display:inline-flex;align-items:center;gap:6px}
+.pre-roles b{color:var(--gold2);font-family:var(--serif);font-size:1.1rem}
+.pre-roles .il{width:1.4em;height:1.4em;color:var(--gold)}
+.pre-chips{justify-content:center;margin:12px 0 4px}
+/* ״עוד״ בקבוצות */
+.menu-h{margin:18px 4px 2px;font-size:.82rem;font-family:var(--sans);font-weight:600;letter-spacing:.08em;color:var(--gold);text-shadow:none}
+.menu-h:first-child{margin-top:4px}
